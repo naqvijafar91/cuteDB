@@ -125,7 +125,7 @@ func (n *Node) getChildNodes() []*Node {
 	return n.children
 }
 
-func (n *Node) SplitNodeWithNoChildren() (int64, *Node, *Node) {
+func (n *Node) SplitLeafNode() (int64, *Node, *Node) {
 	/**
 		LEAF SPLITTING WITHOUT CHILDREN ALGORITHM
 				If its full, then  make two new child nodes without the middle node ( NODE CREATION WILL ONLY TAKE PLACE HERE)
@@ -144,13 +144,13 @@ func (n *Node) SplitNodeWithNoChildren() (int64, *Node, *Node) {
 	elements2 := elements[midIndex+1 : len(elements)]
 
 	// Now lets construct new Nodes from these 2 element arrays
-	leftNode := NewNodeWithoutChildren(elements1)
-	rightNode := NewNodeWithoutChildren(elements2)
+	leftNode := NewLeafNode(elements1)
+	rightNode := NewLeafNode(elements2)
 
 	return middle, leftNode, rightNode
 }
 
-func (n *Node) SplitNodeWithChildren() (int64, *Node, *Node) {
+func (n *Node) SplitNonLeafNode() (int64, *Node, *Node) {
 	/**
 		NON-LEAF NODE SPLITTING ALGORITHM WITH CHILDREN MANIPULATION
 		If its full, sort it and make two new child nodes, Leaf Splitting with children Algorithm:
@@ -200,7 +200,7 @@ func (n *Node) AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(element
 }
 
 // create a
-func NewNodeWithoutChildren(elements []int64) *Node {
+func NewLeafNode(elements []int64) *Node {
 	return &Node{keys: elements}
 }
 
@@ -244,7 +244,7 @@ func (n *Node) insert(value int64, btree *Btree) (int64, *Node, *Node) {
 			return -1, nil, nil
 		} else {
 			// Split the node and return to parent function with pooped up element and left,right nodes
-			return n.SplitNodeWithNoChildren()
+			return n.SplitLeafNode()
 		}
 	} else {
 		// Get the child Node for insertion
@@ -266,7 +266,7 @@ func (n *Node) insert(value int64, btree *Btree) (int64, *Node, *Node) {
 			} else {
 				// this means that the current parent node has overflown, we need to split this up
 				// and move the popped up element upwards if this is not the root
-				poppedMiddleElement, leftNode, rightNode := n.SplitNodeWithChildren()
+				poppedMiddleElement, leftNode, rightNode := n.SplitNonLeafNode()
 
 				/**
 					If current node is not the root node return middle,leftNode,rightNode
