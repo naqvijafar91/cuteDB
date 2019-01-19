@@ -41,10 +41,12 @@ package main
 const maxLeafSize = 5
 const maxchildren = maxLeafSize + 1
 
+// Btree - Our in memory Btree struct
 type Btree struct {
 	root *Node
 }
 
+// Node - In memory node implementation
 type Node struct {
 	keys     []int64
 	children []*Node
@@ -125,6 +127,7 @@ func (n *Node) getChildNodes() []*Node {
 	return n.children
 }
 
+// SplitLeafNode - Split leaf node
 func (n *Node) SplitLeafNode() (int64, *Node, *Node) {
 	/**
 		LEAF SPLITTING WITHOUT CHILDREN ALGORITHM
@@ -150,6 +153,7 @@ func (n *Node) SplitLeafNode() (int64, *Node, *Node) {
 	return middle, leftNode, rightNode
 }
 
+//SplitNonLeafNode - Split non leaf node
 func (n *Node) SplitNonLeafNode() (int64, *Node, *Node) {
 	/**
 		NON-LEAF NODE SPLITTING ALGORITHM WITH CHILDREN MANIPULATION
@@ -182,6 +186,8 @@ func (n *Node) SplitNonLeafNode() (int64, *Node, *Node) {
 	return middle, leftNode, rightNode
 }
 
+// AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren - Insert element received as a reaction
+// from insert operation at child nodes
 func (n *Node) AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(element int64, leftNode *Node, rightNode *Node) {
 	/**
 		POPPED UP JOINING ALGORITHM
@@ -199,15 +205,17 @@ func (n *Node) AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(element
 	n.setChildAtIndex(insertionIndex+1, rightNode)
 }
 
-// create a
+// NewLeafNode - Create a new leaf node without children
 func NewLeafNode(elements []int64) *Node {
 	return &Node{keys: elements}
 }
 
+// NewNodeWithChildren - Create a non leaf node with children
 func NewNodeWithChildren(elements []int64, children []*Node) *Node {
 	return &Node{keys: elements, children: children}
 }
 
+// NewRootNodeWithSingleElementAndTwoChildren - Create a new root node
 func NewRootNodeWithSingleElementAndTwoChildren(element int64, leftChild *Node, rightChild *Node) *Node {
 	elements := make([]int64, 1)
 	children := make([]*Node, 2)
@@ -217,6 +225,7 @@ func NewRootNodeWithSingleElementAndTwoChildren(element int64, leftChild *Node, 
 	return &Node{keys: elements, children: children}
 }
 
+// GetInsertionChildNodeForElement - Get Correct Traversal path for insertion
 func (n *Node) GetInsertionChildNodeForElement(element int64) *Node {
 	/** CHILD NODE SEARCHING ALGORITHM
 		If this is not a leaf node, then find out the proper child node, Child Node Searching Algorithm:
@@ -242,53 +251,48 @@ func (n *Node) insert(value int64, btree *Btree) (int64, *Node, *Node) {
 		n.addElement(value)
 		if !n.hasOverFlown() {
 			return -1, nil, nil
-		} else {
-			// Split the node and return to parent function with pooped up element and left,right nodes
-			return n.SplitLeafNode()
 		}
-	} else {
-		// Get the child Node for insertion
-		childNodeToBeInserted := n.GetInsertionChildNodeForElement(value)
-		poppedMiddleElement, leftNode, rightNode := childNodeToBeInserted.insert(value, btree)
+		// Split the node and return to parent function with pooped up element and left,right nodes
+		return n.SplitLeafNode()
 
-		if poppedMiddleElement == -1 {
-			// this means element has been inserted into the child and hence we do nothing
-			return poppedMiddleElement, leftNode, rightNode
-		} else {
-			// Insert popped up element into current node along with updating the child pointers
-			// with new left and right nodes returned
-			n.AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(poppedMiddleElement, leftNode, rightNode)
-
-			if !n.hasOverFlown() {
-				// this means that element has been easily inserted into current parent Node
-				// without overflowing
-				return -1, nil, nil
-			} else {
-				// this means that the current parent node has overflown, we need to split this up
-				// and move the popped up element upwards if this is not the root
-				poppedMiddleElement, leftNode, rightNode := n.SplitNonLeafNode()
-
-				/**
-					If current node is not the root node return middle,leftNode,rightNode
-				    else if current node == rootNode, Root Node Splitting Algorithm:
-				            1. Create a new node with elements array as keys[0] = middle
-				            2. children[0]=leftNode and children[1]=rightNode
-				            3. Set btree.root=new node
-				            4. return null,null,null
-				*/
-
-				if !btree.isRootNode(n) {
-					return poppedMiddleElement, leftNode, rightNode
-				} else {
-					newRootNode := NewRootNodeWithSingleElementAndTwoChildren(poppedMiddleElement, leftNode, rightNode)
-					btree.root = newRootNode
-					return -1, nil, nil
-				}
-
-			}
-
-		}
 	}
+	// Get the child Node for insertion
+	childNodeToBeInserted := n.GetInsertionChildNodeForElement(value)
+	poppedMiddleElement, leftNode, rightNode := childNodeToBeInserted.insert(value, btree)
+
+	if poppedMiddleElement == -1 {
+		// this means element has been inserted into the child and hence we do nothing
+		return poppedMiddleElement, leftNode, rightNode
+	}
+	// Insert popped up element into current node along with updating the child pointers
+	// with new left and right nodes returned
+	n.AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(poppedMiddleElement, leftNode, rightNode)
+
+	if !n.hasOverFlown() {
+		// this means that element has been easily inserted into current parent Node
+		// without overflowing
+		return -1, nil, nil
+	}
+	// this means that the current parent node has overflown, we need to split this up
+	// and move the popped up element upwards if this is not the root
+	poppedMiddleElement, leftNode, rightNode = n.SplitNonLeafNode()
+
+	/**
+		If current node is not the root node return middle,leftNode,rightNode
+	    else if current node == rootNode, Root Node Splitting Algorithm:
+	            1. Create a new node with elements array as keys[0] = middle
+	            2. children[0]=leftNode and children[1]=rightNode
+	            3. Set btree.root=new node
+	            4. return null,null,null
+	*/
+
+	if !btree.isRootNode(n) {
+		return poppedMiddleElement, leftNode, rightNode
+	}
+	newRootNode := NewRootNodeWithSingleElementAndTwoChildren(poppedMiddleElement, leftNode, rightNode)
+	btree.root = newRootNode
+	return -1, nil, nil
+
 }
 
 func main() {
