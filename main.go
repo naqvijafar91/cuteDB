@@ -38,7 +38,7 @@ package main
 
 */
 
-const maxLeafSize = 2
+const maxLeafSize = 5
 const maxchildren = maxLeafSize + 1
 
 type Btree struct {
@@ -54,28 +54,55 @@ func (btree *Btree) isRootNode(node *Node) bool {
 	return btree.root == node
 }
 
-//Todo: Sorting algorithm
-func (n *Node) sort() {
-
-}
-
 func (n *Node) isLeaf() bool {
-	return true
+	if n.children == nil {
+		return true
+	}
+	return false
 }
 
+/**
+* Do a linear search and insert the element
+ */
 func (n *Node) addElement(element int64) int {
+	elements := n.getElements()
+	indexForInsertion := 0
+	elementInsertedInBetween := false
+	for i := 0; i < len(elements); i++ {
+		if elements[i] >= element {
+			// We have found the right place to insert the element
 
-	// n.keys = append(n.keys, value)
-	// n.sort()
-	return 0
+			indexForInsertion = i
+			elements = append(elements, 0)
+			copy(elements[indexForInsertion+1:], elements[indexForInsertion:])
+			elements[indexForInsertion] = element
+			n.setElements(elements)
+			elementInsertedInBetween = true
+			break
+		}
+	}
+	if !elementInsertedInBetween {
+		// If we are here, it means we need to insert the element at the rightmost position
+		n.setElements(append(elements, element))
+		indexForInsertion = len(n.getElements()) - 1
+	}
+
+	return indexForInsertion
 }
 
 func (n *Node) hasOverFlown() bool {
-	return true
+	if len(n.getElements()) > maxLeafSize {
+		return true
+	}
+	return false
 }
 
 func (n *Node) getElements() []int64 {
 	return n.keys
+}
+
+func (n *Node) setElements(newElements []int64) {
+	n.keys = newElements
 }
 
 func (n *Node) getElementAtIndex(index int) int64 {
@@ -181,9 +208,13 @@ func NewNodeWithChildren(elements []int64, children []*Node) *Node {
 	return &Node{keys: elements, children: children}
 }
 
-func NewRootNodeWithSingleElementAndTwoChildren(element int64, child1 *Node, child2 *Node) *Node {
-
-	return nil
+func NewRootNodeWithSingleElementAndTwoChildren(element int64, leftChild *Node, rightChild *Node) *Node {
+	elements := make([]int64, 1)
+	children := make([]*Node, 2)
+	elements[0] = element
+	children[0] = leftChild
+	children[1] = rightChild
+	return &Node{keys: elements, children: children}
 }
 
 func (n *Node) GetInsertionChildNodeForElement(element int64) *Node {
@@ -249,15 +280,15 @@ func (n *Node) insert(value int64, btree *Btree) (int64, *Node, *Node) {
 				if !btree.isRootNode(n) {
 					return poppedMiddleElement, leftNode, rightNode
 				} else {
-					newRootNode := NewNodeWithChildren
+					newRootNode := NewRootNodeWithSingleElementAndTwoChildren(poppedMiddleElement, leftNode, rightNode)
+					btree.root = newRootNode
+					return -1, nil, nil
 				}
 
 			}
 
 		}
 	}
-
-	return 0, nil, nil
 }
 
 func main() {
