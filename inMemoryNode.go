@@ -56,6 +56,7 @@ func (n *InMemoryNode) isLeaf() bool {
 	return false
 }
 
+// PrintTree - Traverse and print the entire tree
 func (n *InMemoryNode) PrintTree(level ...int) {
 	var currentLevel int
 	if len(level) == 0 {
@@ -317,6 +318,7 @@ func (n *InMemoryNode) insert(value int64, btree *Btree) (int64, *InMemoryNode, 
 	return -1, nil, nil
 }
 
+// Insert - Insert value into Node
 func (n *InMemoryNode) Insert(value int64, btree *Btree) {
 	n.insert(value, btree)
 }
