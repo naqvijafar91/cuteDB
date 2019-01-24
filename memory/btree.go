@@ -1,4 +1,4 @@
-package main
+package memory
 
 // Btree - Our in memory Btree struct
 type Btree struct {
@@ -13,10 +13,6 @@ type Node interface {
 
 func (btree *Btree) isRootNode(node Node) bool {
 	return btree.root == node
-}
-
-func InitDb() *Btree {
-	return &Btree{root: InitRootNode()}
 }
 
 // NewBtree - Create a new btree
