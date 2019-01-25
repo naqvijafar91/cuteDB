@@ -1,5 +1,6 @@
 package main
 
+import "os"
 // Btree - Our in memory Btree struct
 type Btree struct {
 	root Node
@@ -21,7 +22,13 @@ func InitDb() *Btree {
 
 // NewBtree - Create a new btree
 func NewBtree() *Btree {
-	return &Btree{root: NewLeafNode([]int64{})}
+	path := "./db/freedom.db"
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		panic(err)
+	}
+	blockService:=NewBlockService(file)
+	return &Btree{root: NewLeafNode([]int64{},blockService)}
 }
 
 // Insert - Insert element in tree

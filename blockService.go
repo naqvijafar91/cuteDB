@@ -21,6 +21,11 @@ func (b *Block) setData(data []uint64) {
 	b.currentLeafSize = uint64(len(data))
 }
 
+func (b *Block) setChildren(childrenBlockIds []uint64) {
+	b.childrenBlockIds = childrenBlockIds
+	b.currentChildrenSize = uint64(len(childrenBlockIds))
+}
+
 func uint64ToBytes(index uint64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, uint64(index))
@@ -151,6 +156,8 @@ func (bs *BlockService) NewBlock() (*Block, error) {
 	return block, nil
 }
 
+
+
 func (bs *BlockService) writeBlockToDisk(block *Block) error {
 	seekOffset := blockSize * block.id
 	blockBuffer := bs.getBufferFromBlock(block)
@@ -162,7 +169,37 @@ func (bs *BlockService) writeBlockToDisk(block *Block) error {
 	return nil
 }
 
-func (bs *BlockService) UpdateBlock(n *DiskNode) {
+func (bs *BlockService) convertDiskNodeToBlock(node *DiskNode) *Block {
+	block := &Block{}
+	block.id = node.blockID
+	tempElements := make([]uint64, len(node.getElements()))
+	for index, element := range node.getElements() {
+		tempElements[index] = uint64(element)
+	}
+	block.setData(tempElements)
+	tempBlockIDs := make([]uint64, len(node.getChildNodes()))
+	for index, child := range node.getChildNodes() {
+		tempBlockIDs[index] = child.blockID
+	}
+	block.setChildren(tempBlockIDs)
+	return block
+}
+
+func (bs *BlockService) GetNodeAtBlockID(uint64 blockID) (*DiskNode, error) {
+	block, err := bs.GetBlockFromDiskByBlockNumber(blockID)
+	if err != nil {
+		return nil, err
+	}
+	return bs.convertBlockToDiskNode(block)
+}
+
+func (bs *BlockService) convertBlockToDiskNode(block *Block) *DiskNode {
+
+	// node := NewBlockService
+	return nil
+}
+
+func (bs *BlockService) SaveNodeToDisk(n *DiskNode) {
 
 }
 

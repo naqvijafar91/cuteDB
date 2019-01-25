@@ -73,3 +73,25 @@ func TestShouldSaveNewBlockOnDisk(t *testing.T) {
 		t.Error("Length of data field should not be zero")
 	}
 }
+
+func TestShouldConvertToAndFromBytes(t *testing.T) {
+	blockService := initBlockService()
+	block := &Block{}
+	block.setData([]uint64{100, 101, 102})
+	block.setChildren([]uint64{2, 3, 4, 6})
+	blockBuffer := blockService.getBufferFromBlock(block)
+	convertedBlock := blockService.getBlockFromBuffer(blockBuffer)
+
+	if len(convertedBlock.data) != len(block.data) {
+		t.Error("Length of blocks should be same")
+	}
+
+	if convertedBlock.data[1] != 101 {
+		t.Error("Should contain 101 at 1st index")
+	}
+
+	if convertedBlock.childrenBlockIds[2] != 4 {
+		t.Error("Should contain 4 at 2nd index")
+	}
+
+}
