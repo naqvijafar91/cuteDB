@@ -56,6 +56,7 @@ func (bs *BlockService) getLatestBlockID() (int64, error) {
 	return (int64(fi.Size()) / int64(blockSize)) - 1, nil
 }
 
+//@Todo:Store current root block data somewhere else
 func (bs *BlockService) GetRootBlock() (*Block, error) {
 
 	/*
@@ -156,8 +157,6 @@ func (bs *BlockService) NewBlock() (*Block, error) {
 	return block, nil
 }
 
-
-
 func (bs *BlockService) writeBlockToDisk(block *Block) error {
 	seekOffset := blockSize * block.id
 	blockBuffer := bs.getBufferFromBlock(block)
@@ -177,30 +176,52 @@ func (bs *BlockService) convertDiskNodeToBlock(node *DiskNode) *Block {
 		tempElements[index] = uint64(element)
 	}
 	block.setData(tempElements)
-	tempBlockIDs := make([]uint64, len(node.getChildNodes()))
-	for index, child := range node.getChildNodes() {
-		tempBlockIDs[index] = child.blockID
+	tempBlockIDs := make([]uint64, len(node.getChildBlockIDs()))
+	for index, childBlockID := range node.getChildBlockIDs() {
+		tempBlockIDs[index] = childBlockID
 	}
 	block.setChildren(tempBlockIDs)
 	return block
 }
 
-func (bs *BlockService) GetNodeAtBlockID(uint64 blockID) (*DiskNode, error) {
-	block, err := bs.GetBlockFromDiskByBlockNumber(blockID)
+func (bs *BlockService) GetNodeAtBlockID(blockID uint64) (*DiskNode, error) {
+	block, err := bs.GetBlockFromDiskByBlockNumber(int64(blockID))
 	if err != nil {
 		return nil, err
 	}
-	return bs.convertBlockToDiskNode(block)
+	return bs.convertBlockToDiskNode(block), nil
 }
 
 func (bs *BlockService) convertBlockToDiskNode(block *Block) *DiskNode {
-
-	// node := NewBlockService
-	return nil
+	node := &DiskNode{}
+	node.blockService=bs
+	node.blockID=block.id
+	node.keys=make([]int64,block.currentLeafSize)
+	for index:=range node.keys {
+		node.keys[index] = int64(block.data[index])
+	}
+	node.childrenBlockIDs=make([]uint64,block.currentChildrenSize)
+	for index:=range node.childrenBlockIDs {
+		node.childrenBlockIDs[index] = block.childrenBlockIds[index]
+	}
+	return node
 }
 
-func (bs *BlockService) SaveNodeToDisk(n *DiskNode) {
+// NewBlockFromNode - Save a new node to disk block
+func (bs *BlockService) SaveNewNodeToDisk(n *DiskNode) error {
+	// Get block id to be assigned to this block
+	latestBlockID, err := bs.getLatestBlockID()
+	if err != nil {
+		return err
+	}
+	n.blockID = uint64(latestBlockID)
+	block := bs.convertDiskNodeToBlock(n)
+	return bs.writeBlockToDisk(block)
+}
 
+func (bs *BlockService) UpdateNodeToDisk(n *DiskNode) error {
+	block := bs.convertDiskNodeToBlock(n)
+	return bs.writeBlockToDisk(block)
 }
 
 func NewBlockService(file *os.File) *BlockService {

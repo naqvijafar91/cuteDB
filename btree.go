@@ -1,6 +1,7 @@
 package main
 
 import "os"
+
 // Btree - Our in memory Btree struct
 type Btree struct {
 	root Node
@@ -16,19 +17,21 @@ func (btree *Btree) isRootNode(node Node) bool {
 	return btree.root == node
 }
 
-func InitDb() *Btree {
-	return &Btree{root: InitRootNode()}
-}
-
+//@Todo: Remove panic from here
 // NewBtree - Create a new btree
-func NewBtree() *Btree {
+func InitializeBtree() (*Btree, error) {
 	path := "./db/freedom.db"
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err)
 	}
-	blockService:=NewBlockService(file)
-	return &Btree{root: NewLeafNode([]int64{},blockService)}
+	dns := NewDiskNodeService(file)
+
+	root, err := dns.GetRootNodeFromDisk()
+	if err != nil {
+		panic(err)
+	}
+	return &Btree{root: root}, nil
 }
 
 // Insert - Insert element in tree
