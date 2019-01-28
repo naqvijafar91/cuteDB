@@ -7,5 +7,5 @@ func TestBtreeInsert(t *testing.T) {
 	for i := 1; i <= 50; i++ {
 		tree.Insert(int64(i))
 	}
-	// tree.root.PrintTree()
+	tree.root.PrintTree()
 }

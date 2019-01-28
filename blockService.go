@@ -7,14 +7,19 @@ import (
 
 const blockSize = 4096
 
+// Based on the below calc
+const maxLeafSize = 253
+
 // Block -- Make sure that it is accomodated in blockSize = 4096
 type Block struct {
-	id                  uint64   // 8
-	currentLeafSize     uint64   // 8
-	currentChildrenSize uint64   // 8
-	data                []uint64 // 8 * maxLeafSize
-	childrenBlockIds    []uint64 // 8 * (maxLeafSize+1)
+	id                  uint64   // 4096 - 8 = 4088
+	currentLeafSize     uint64   // 4088 - 8 = 4080
+	currentChildrenSize uint64   // 4080 - 8 = 4072
+	data                []uint64 // 4072 - (8 * 253(maxLeafSize) = 2024) = 2048
+	childrenBlockIds    []uint64 // 2048 - (8 * 254(maxLeafSize+1) = 2032) = 16
 }
+
+// 16 bytes are still wasted
 
 func (b *Block) setData(data []uint64) {
 	b.data = data
@@ -194,14 +199,14 @@ func (bs *BlockService) GetNodeAtBlockID(blockID uint64) (*DiskNode, error) {
 
 func (bs *BlockService) convertBlockToDiskNode(block *Block) *DiskNode {
 	node := &DiskNode{}
-	node.blockService=bs
-	node.blockID=block.id
-	node.keys=make([]int64,block.currentLeafSize)
-	for index:=range node.keys {
+	node.blockService = bs
+	node.blockID = block.id
+	node.keys = make([]int64, block.currentLeafSize)
+	for index := range node.keys {
 		node.keys[index] = int64(block.data[index])
 	}
-	node.childrenBlockIDs=make([]uint64,block.currentChildrenSize)
-	for index:=range node.childrenBlockIDs {
+	node.childrenBlockIDs = make([]uint64, block.currentChildrenSize)
+	for index := range node.childrenBlockIDs {
 		node.childrenBlockIDs[index] = block.childrenBlockIds[index]
 	}
 	return node
@@ -214,7 +219,7 @@ func (bs *BlockService) SaveNewNodeToDisk(n *DiskNode) error {
 	if err != nil {
 		return err
 	}
-	n.blockID = uint64(latestBlockID)
+	n.blockID = uint64(latestBlockID) + 1
 	block := bs.convertDiskNodeToBlock(n)
 	return bs.writeBlockToDisk(block)
 }
@@ -222,6 +227,11 @@ func (bs *BlockService) SaveNewNodeToDisk(n *DiskNode) error {
 func (bs *BlockService) UpdateNodeToDisk(n *DiskNode) error {
 	block := bs.convertDiskNodeToBlock(n)
 	return bs.writeBlockToDisk(block)
+}
+
+func (bs *BlockService) UpdateRootNode(n *DiskNode) error {
+	n.blockID = 0
+	return bs.UpdateNodeToDisk(n)
 }
 
 func NewBlockService(file *os.File) *BlockService {
@@ -240,4 +250,13 @@ func (bs *BlockService) rootBlockExists() bool {
 	} else {
 		return true
 	}
+}
+
+/**
+@Todo: Implement a function to :
+1. Dynamicaly calculate blockSize
+2. Then based on the blocksize, calculate the maxLeafSize
+*/
+func (bs *BlockService) getMaxLeafSize() int {
+	return maxLeafSize
 }

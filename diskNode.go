@@ -40,7 +40,6 @@ import "fmt"
 
 */
 
-const maxLeafSize = 5
 const maxchildren = maxLeafSize + 1
 
 // DiskNode - In memory node implementation
@@ -53,6 +52,8 @@ type DiskNode struct {
 
 func (n *DiskNode) isLeaf() bool {
 	if n.childrenBlockIDs == nil {
+		return true
+	} else if len(n.childrenBlockIDs) == 0 {
 		return true
 	}
 	return false
@@ -107,7 +108,7 @@ func (n *DiskNode) addElement(element int64) int {
 }
 
 func (n *DiskNode) hasOverFlown() bool {
-	if len(n.getElements()) > maxLeafSize {
+	if len(n.getElements()) > n.blockService.getMaxLeafSize() {
 		return true
 	}
 	return false
@@ -283,15 +284,15 @@ func NewRootNodeWithSingleElementAndTwoChildren(element int64, leftChildBlockID 
 	childrenBlockIDs := []uint64{leftChildBlockID, rightChildBlockID}
 	node := &DiskNode{keys: elements, childrenBlockIDs: childrenBlockIDs, blockService: blockService}
 	//persist this node to disk
-	err := blockService.SaveNewNodeToDisk(node)
+	err := blockService.UpdateRootNode(node)
 	if err != nil {
 		return nil, err
 	}
 	return node, nil
 }
 
-// GetInsertionChildNodeForElement - Get Correct Traversal path for insertion
-func (n *DiskNode) GetInsertionChildNodeForElement(element int64) (*DiskNode, error) {
+// GetChildNodeForElement - Get Correct Traversal path for insertion
+func (n *DiskNode) GetChildNodeForElement(element int64) (*DiskNode, error) {
 	/** CHILD NODE SEARCHING ALGORITHM
 		If this is not a leaf node, then find out the proper child node, Child Node Searching Algorithm:
 	    1. Input : Value to be inserted, the current Node. Output : Pointer to the childnode
@@ -304,7 +305,6 @@ func (n *DiskNode) GetInsertionChildNodeForElement(element int64) (*DiskNode, er
 			return n.getChildAtIndex(i)
 		}
 	}
-
 	// This means that no element is found with value greater than the element to be inserted
 	// so we need to return the last child node
 	return n.getLastChildNode()
@@ -333,7 +333,7 @@ func (n *DiskNode) insert(value int64, btree *Btree) (int64, *DiskNode, *DiskNod
 			if err != nil {
 				return -1, nil, nil, err
 			}
-			btree.root = newRootNode
+			btree.setRootNode(newRootNode)
 			return -1, nil, nil, nil
 
 		}
@@ -342,7 +342,7 @@ func (n *DiskNode) insert(value int64, btree *Btree) (int64, *DiskNode, *DiskNod
 
 	}
 	// Get the child Node for insertion
-	childNodeToBeInserted, err := n.GetInsertionChildNodeForElement(value)
+	childNodeToBeInserted, err := n.GetChildNodeForElement(value)
 	if err != nil {
 		return -1, nil, nil, err
 	}
@@ -394,11 +394,47 @@ func (n *DiskNode) insert(value int64, btree *Btree) (int64, *DiskNode, *DiskNod
 
 	//@Todo: Update the metadata somewhere so that we can read this new root node
 	//next time
-	btree.root = newRootNode
+	btree.setRootNode(newRootNode)
 	return -1, nil, nil, nil
+}
+
+func (n *DiskNode) searchElementInNode(key int64) (bool, int) {
+	for i := 0; i < len(n.getElements()); i++ {
+		if (n.getElementAtIndex(i)) == key {
+			return true, i
+		}
+	}
+	return false, -1
+}
+func (n *DiskNode) search(key int64) (bool, error) {
+	/*
+		Algo:
+		1. Find key in current node, if this is leaf node, then return as not found
+		2. Then find the appropriate child node
+		3. goto step 1
+	*/
+	foundInCurrentNode, _ := n.searchElementInNode(key)
+
+	if foundInCurrentNode {
+		return true, nil
+	}
+
+	if n.isLeaf() {
+		return false, nil
+	}
+
+	node, err := n.GetChildNodeForElement(key)
+	if err != nil {
+		return false, err
+	}
+	return node.search(key)
 }
 
 // Insert - Insert value into Node
 func (n *DiskNode) Insert(value int64, btree *Btree) {
 	n.insert(value, btree)
+}
+
+func (n *DiskNode) Get(key int64) (bool, error) {
+	return n.search(key)
 }

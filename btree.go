@@ -10,6 +10,7 @@ type Btree struct {
 // Node - Interface for node
 type Node interface {
 	Insert(value int64, btree *Btree)
+	Get(key int64) (bool, error)
 	PrintTree(level ...int)
 }
 
@@ -19,9 +20,13 @@ func (btree *Btree) isRootNode(node Node) bool {
 
 //@Todo: Remove panic from here
 // NewBtree - Create a new btree
-func InitializeBtree() (*Btree, error) {
-	path := "./db/freedom.db"
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE, 0666)
+func InitializeBtree(path ...string) (*Btree, error) {
+	if len(path) == 0 {
+		path = make([]string, 1)
+		path[0] = "./db/freedom.db"
+	}
+
+	file, err := os.OpenFile(path[0], os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -39,6 +44,9 @@ func (btree *Btree) Insert(value int64) {
 	btree.root.Insert(value, btree)
 }
 
+func (btree *Btree) Get(key int64) (bool,error) {
+	return btree.root.Get(key)
+}
 func (btree *Btree) setRootNode(node Node) {
 	btree.root = node
 }

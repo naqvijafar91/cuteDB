@@ -95,3 +95,36 @@ func TestShouldConvertToAndFromBytes(t *testing.T) {
 	}
 
 }
+
+func TestShouldConvertToAndFromDiskNode(t *testing.T) {
+	bs := initBlockService()
+	node := &DiskNode{}
+	node.blockID = 55
+	node.keys = []int64{500, 100}
+	node.childrenBlockIDs=[]uint64{1000,10001}
+	block:=bs.convertDiskNodeToBlock(node)
+	
+	if block.id != 55 {
+		t.Error("Should have same block id as node block id")
+	}
+	if block.data[1] != 100 {
+		t.Error("Should have same data element as node")
+	}
+
+	if block.childrenBlockIds[1]!=10001 {
+		t.Error("Block ids should match")
+	}
+
+	nodeFromBlock:=bs.convertBlockToDiskNode(block)
+	
+	if nodeFromBlock.blockID!=node.blockID {
+		t.Error("Block ids should match")
+	}
+
+	if nodeFromBlock.childrenBlockIDs[0] !=1000 {
+		t.Error("Child Block ids should match")
+	}
+	if nodeFromBlock.keys[0] != 500 {
+		t.Error("Data elements should match")
+	}
+}
