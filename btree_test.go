@@ -39,7 +39,7 @@ func TestBtreeGet(t *testing.T) {
 	}
 
 	for i := 1; i <= totalElements; i++ {
-		found, err := tree.root.Get(int64(i))
+		found, err := tree.Get(int64(i))
 		if err != nil {
 			t.Error(err)
 		}
