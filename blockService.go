@@ -107,13 +107,6 @@ func (bs *BlockService) getBlockFromBuffer(blockBuffer []byte) *Block {
 	blockOffset += 8
 	block.currentChildrenSize = uint64FromBytes(blockBuffer[blockOffset:])
 	blockOffset += 8
-	//Read data values
-	block.data = make([]uint64, block.currentLeafSize)
-	for i := 0; i < int(block.currentLeafSize); i++ {
-		block.data[i] = uint64FromBytes(blockBuffer[blockOffset:])
-		blockOffset += 8
-	}
-
 	//Read actual pairs now
 	block.dataSet = make([]*Pairs, block.currentLeafSize)
 	for i := 0; i < int(block.currentLeafSize); i++ {
@@ -140,11 +133,6 @@ func (bs *BlockService) getBufferFromBlock(block *Block) []byte {
 	blockOffset += 8
 	copy(blockBuffer[blockOffset:], uint64ToBytes(block.currentChildrenSize))
 	blockOffset += 8
-	//Write data values
-	for i := 0; i < int(block.currentLeafSize); i++ {
-		copy(blockBuffer[blockOffset:], uint64ToBytes(block.data[i]))
-		blockOffset += 8
-	}
 
 	//Write actual pairs now
 	for i := 0; i < int(block.currentLeafSize); i++ {
@@ -191,9 +179,9 @@ func (bs *BlockService) writeBlockToDisk(block *Block) error {
 func (bs *BlockService) convertDiskNodeToBlock(node *DiskNode) *Block {
 	block := &Block{}
 	block.id = node.blockID
-	tempElements := make([]uint64, len(node.getElements()))
+	tempElements := make([]*Pairs, len(node.getElements()))
 	for index, element := range node.getElements() {
-		tempElements[index] = uint64(element)
+		tempElements[index] = element
 	}
 	block.setData(tempElements)
 	tempBlockIDs := make([]uint64, len(node.getChildBlockIDs()))
@@ -216,9 +204,9 @@ func (bs *BlockService) convertBlockToDiskNode(block *Block) *DiskNode {
 	node := &DiskNode{}
 	node.blockService = bs
 	node.blockID = block.id
-	node.keys = make([]int64, block.currentLeafSize)
+	node.keys = make([]*Pairs, block.currentLeafSize)
 	for index := range node.keys {
-		node.keys[index] = int64(block.data[index])
+		node.keys[index] = block.dataSet[index]
 	}
 	node.childrenBlockIDs = make([]uint64, block.currentChildrenSize)
 	for index := range node.childrenBlockIDs {
