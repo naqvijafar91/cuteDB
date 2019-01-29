@@ -9,16 +9,13 @@ const blockSize = 4096
 
 // Based on the below calc
 const maxLeafSize = 30
-
 // Block -- Make sure that it is accomodated in blockSize = 4096
 type Block struct {
 	id                  uint64 // 4096 - 8 = 4088
 	currentLeafSize     uint64 // 4088 - 8 = 4080
 	currentChildrenSize uint64 // 4080 - 8 = 4072
-	// data                []uint64 // 4072 - (8 * 253(maxLeafSize) = 2024) = 2048
-	childrenBlockIds []uint64 // 2048 - (8 * 254(maxLeafSize+1) = 2032) = 16
+	childrenBlockIds []uint64 // 352 - (8 * 30) =  112
 	dataSet          []*Pairs // 4072 - (124 * 30) = 352
-	childBlockIDs    []uint64 // 352 - (8 * 30) =  112
 }
 
 // 112 bytes are still wasted

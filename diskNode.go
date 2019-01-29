@@ -130,6 +130,15 @@ func (n *DiskNode) getChildAtIndex(index int) (*DiskNode, error) {
 	return n.blockService.GetNodeAtBlockID(n.childrenBlockIDs[index])
 }
 
+func (n *DiskNode) shiftRemainingChildrenToRight(index int) {
+	if len(n.childrenBlockIDs) < index+1 {
+		// This means index is the last element, hence no need to shift
+		return
+	}
+	n.childrenBlockIDs = append(n.childrenBlockIDs, 0)
+	copy(n.childrenBlockIDs[index+1:], n.childrenBlockIDs[index:])
+	n.childrenBlockIDs[index] = 0
+}
 func (n *DiskNode) setChildAtIndex(index int, childNode *DiskNode) {
 	if len(n.childrenBlockIDs) < index+1 {
 		n.childrenBlockIDs = append(n.childrenBlockIDs, 0)
@@ -252,6 +261,8 @@ func (n *DiskNode) AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(ele
 	//CHILD POINTER MANIPULATION ALGORITHM
 	insertionIndex := n.addElement(element)
 	n.setChildAtIndex(insertionIndex, leftNode)
+	//Shift remaining elements to the right and add this
+	n.shiftRemainingChildrenToRight(insertionIndex+1)
 	n.setChildAtIndex(insertionIndex+1, rightNode)
 }
 
