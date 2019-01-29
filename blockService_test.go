@@ -57,8 +57,11 @@ func TestShouldSaveNewBlockOnDisk(t *testing.T) {
 	if block.currentLeafSize != 0 {
 		t.Error("Block leaf size should be zero")
 	}
-
-	block.setData([]uint64{55, 100})
+	elements := make([]*Pairs, 3)
+	elements[0] = NewPair("hola", "amigos")
+	elements[1] = NewPair("foo", "bar")
+	elements[2] = NewPair("gooz", "bumps")
+	block.setData(elements)
 	err = blockService.writeBlockToDisk(block)
 	if err != nil {
 		t.Error(err)
@@ -69,62 +72,85 @@ func TestShouldSaveNewBlockOnDisk(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(block.data) == 0 {
+	if len(block.dataSet) == 0 {
 		t.Error("Length of data field should not be zero")
 	}
 }
 
-func TestShouldConvertToAndFromBytes(t *testing.T) {
+func TestShouldConvertPairToAndFromBytes(t *testing.T) {
+	pair := &Pairs{}
+	pair.setKey("Hola  ")
+	pair.setValue("Amigos")
+	pairBytes := convertPairsToBytes(pair)
+	convertedPair := convertBytesToPair(pairBytes)
+
+	if pair.keyLen != convertedPair.keyLen || pair.valueLen != convertedPair.valueLen {
+		t.Error("Lengths do not match")
+	}
+
+	if pair.key != convertedPair.key || pair.value != convertedPair.value {
+		t.Error("Values do not match")
+	}
+}
+
+func TestShouldConvertBlockToAndFromBytes(t *testing.T) {
 	blockService := initBlockService()
 	block := &Block{}
-	block.setData([]uint64{100, 101, 102})
 	block.setChildren([]uint64{2, 3, 4, 6})
+
+	elements := make([]*Pairs, 3)
+	elements[0] = NewPair("hola", "amigos")
+	elements[1] = NewPair("foo", "bar")
+	elements[2] = NewPair("gooz", "bumps")
+	block.setData(elements)
 	blockBuffer := blockService.getBufferFromBlock(block)
 	convertedBlock := blockService.getBlockFromBuffer(blockBuffer)
 
-	if len(convertedBlock.data) != len(block.data) {
-		t.Error("Length of blocks should be same")
-	}
-
-	if convertedBlock.data[1] != 101 {
-		t.Error("Should contain 101 at 1st index")
-	}
 
 	if convertedBlock.childrenBlockIds[2] != 4 {
 		t.Error("Should contain 4 at 2nd index")
 	}
 
+	if len(convertedBlock.dataSet) != len(block.dataSet) {
+		t.Error("Length of blocks should be same")
+	}
+
+	if convertedBlock.dataSet[1].key != block.dataSet[1].key {
+		t.Error("Keys dont match")
+	}
+
+	if convertedBlock.dataSet[2].value != block.dataSet[2].value {
+		t.Error("Values dont match")
+	}
 }
 
 func TestShouldConvertToAndFromDiskNode(t *testing.T) {
 	bs := initBlockService()
 	node := &DiskNode{}
 	node.blockID = 55
-	node.keys = []int64{500, 100}
-	node.childrenBlockIDs=[]uint64{1000,10001}
-	block:=bs.convertDiskNodeToBlock(node)
-	
+	elements := make([]*Pairs, 3)
+	elements[0] = NewPair("hola", "amigos")
+	node.keys = elements
+	node.childrenBlockIDs = []uint64{1000, 10001}
+	block := bs.convertDiskNodeToBlock(node)
+
 	if block.id != 55 {
 		t.Error("Should have same block id as node block id")
 	}
-	if block.data[1] != 100 {
-		t.Error("Should have same data element as node")
-	}
-
-	if block.childrenBlockIds[1]!=10001 {
+	if block.childrenBlockIds[1] != 10001 {
 		t.Error("Block ids should match")
 	}
 
-	nodeFromBlock:=bs.convertBlockToDiskNode(block)
-	
-	if nodeFromBlock.blockID!=node.blockID {
+	nodeFromBlock := bs.convertBlockToDiskNode(block)
+
+	if nodeFromBlock.blockID != node.blockID {
 		t.Error("Block ids should match")
 	}
 
-	if nodeFromBlock.childrenBlockIDs[0] !=1000 {
+	if nodeFromBlock.childrenBlockIDs[0] != 1000 {
 		t.Error("Child Block ids should match")
 	}
-	if nodeFromBlock.keys[0] != 500 {
+	if nodeFromBlock.keys[0].key != "hola" {
 		t.Error("Data elements should match")
 	}
 }

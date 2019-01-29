@@ -1,51 +1,70 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
 
+func printNodeElements(n *DiskNode) {
+	for i := 0; i < len(n.getElements()); i++ {
+		fmt.Println(n.getElementAtIndex(i).key, n.getElementAtIndex(i).value)
+	}
+}
 func TestAddElement(t *testing.T) {
 	blockService := initBlockService()
-	n, err := NewLeafNode([]int64{1, 2, 4, 5}, blockService)
+	elements := make([]*Pairs, 3)
+	elements[0] = NewPair("hola", "amigos")
+	elements[1] = NewPair("foo", "bar")
+	elements[2] = NewPair("gooz", "bumps")
+	n, err := NewLeafNode(elements, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	n.addElement(3)
-	if !reflect.DeepEqual(n.getElements(), []int64{1, 2, 3, 4, 5}) {
+	addedElement := NewPair("added", "please check")
+	n.addElement(addedElement)
+
+	if !reflect.DeepEqual(n.getElements(), []*Pairs{addedElement, elements[0],
+		elements[1], elements[2]}) {
 		t.Error("Value not inserted at the correct position", n.getElements())
 	}
 
-	n, err = NewLeafNode([]int64{0}, blockService)
+	n, err = NewLeafNode([]*Pairs{NewPair("first", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	n.addElement(3)
-	if !reflect.DeepEqual(n.getElements(), []int64{0, 3}) {
+	n.addElement(NewPair("second", "value"))
+	if !reflect.DeepEqual(n.getElements(), []*Pairs{NewPair("first", "value"),
+		NewPair("second", "value")}) {
 		t.Error("Value not inserted at the correct position", n.getElements())
 	}
 
-	n, err = NewLeafNode([]int64{5, 10, 15}, blockService)
+	n, err = NewLeafNode([]*Pairs{NewPair("first", "value"),
+		NewPair("second", "value"), NewPair("third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	n.addElement(3)
-	if !reflect.DeepEqual(n.getElements(), []int64{3, 5, 10, 15}) {
+	n.addElement(NewPair("fourth", "value"))
+	if !reflect.DeepEqual(n.getElements(), []*Pairs{NewPair("first", "value"),
+		NewPair("fourth", "value"), NewPair("second", "value"), NewPair("third", "value")}) {
 		t.Error("Value not inserted at the correct position", n.getElements())
 	}
 }
 
 func TestIsLeaf(t *testing.T) {
 	blockService := initBlockService()
-	child1, err := NewLeafNode([]int64{10, 11}, blockService)
+	child1, err := NewLeafNode([]*Pairs{NewPair("first", "value"),
+		NewPair("second", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child2, err := NewLeafNode([]int64{13, 14}, blockService)
+	child2, err := NewLeafNode([]*Pairs{NewPair("third", "value"),
+		NewPair("forth", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	n, err := NewNodeWithChildren([]int64{1, 2, 4, 5}, []uint64{child1.blockID, child2.blockID}, blockService)
+	n, err := NewNodeWithChildren([]*Pairs{NewPair("fifth", "value"),
+		NewPair("sixth", "value")}, []uint64{child1.blockID, child2.blockID}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
@@ -61,7 +80,8 @@ func TestIsLeaf(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	n, err = NewNodeWithChildren([]int64{1, 2, 4, 5}, nil, blockService)
+	n, err = NewNodeWithChildren([]*Pairs{NewPair("first", "value"),
+		NewPair("second", "value")}, nil, blockService)
 	if err != nil {
 		t.Error(err)
 	}
@@ -69,7 +89,8 @@ func TestIsLeaf(t *testing.T) {
 		t.Error("Should return as leaf as it has no children", n)
 	}
 
-	n, err = NewLeafNode([]int64{1, 2, 4, 5}, blockService)
+	n, err = NewLeafNode([]*Pairs{NewPair("first", "value"),
+		NewPair("second", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
@@ -80,9 +101,11 @@ func TestIsLeaf(t *testing.T) {
 
 func TestHasOverFlown(t *testing.T) {
 	blockService := initBlockService()
-	elements := make([]int64, blockService.getMaxLeafSize()+1)
+	elements := make([]*Pairs, blockService.getMaxLeafSize()+1)
 	for i := 0; i < blockService.getMaxLeafSize()+1; i++ {
-		elements[i] = int64(i + 1)
+		key := fmt.Sprintf("key-%d", i)
+		value := fmt.Sprintf("value-%d", i)
+		elements[i] = NewPair(key, value)
 	}
 	n, err := NewLeafNode(elements, blockService)
 	if err != nil {
@@ -92,7 +115,8 @@ func TestHasOverFlown(t *testing.T) {
 		t.Error("Should return true as node has overflown", n)
 	}
 
-	n, err = NewLeafNode([]int64{1, 2, 3}, blockService)
+	n, err = NewLeafNode([]*Pairs{NewPair("first", "value"), NewPair("fourth", "value"),
+		NewPair("second", "value"), NewPair("third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
@@ -100,11 +124,13 @@ func TestHasOverFlown(t *testing.T) {
 		t.Error("Should return false as node has 3 elements", n)
 	}
 
-	child1, err := NewLeafNode([]int64{10, 11}, blockService)
+	child1, err := NewLeafNode([]*Pairs{NewPair("first", "value"),
+		NewPair("second", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child2, err := NewLeafNode([]int64{13, 14}, blockService)
+	child2, err := NewLeafNode([]*Pairs{NewPair("third", "value"),
+		NewPair("fourth", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
@@ -121,7 +147,8 @@ func TestHasOverFlown(t *testing.T) {
 
 func TestSplitLeafNode(t *testing.T) {
 	blockService := initBlockService()
-	n, err := NewLeafNode([]int64{1, 2, 3, 4, 5, 6}, blockService)
+	n, err := NewLeafNode([]*Pairs{NewPair("first", "value"),
+		NewPair("fourth", "value"), NewPair("second", "value"), NewPair("third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
@@ -129,46 +156,49 @@ func TestSplitLeafNode(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if poppedUpMiddleElement != 4 {
+	if poppedUpMiddleElement.key != "second" {
 		t.Error("Wrong middle Element popped up", poppedUpMiddleElement)
 	}
-	if leftChild.getElementAtIndex(2) != 3 {
+	if leftChild.getElementAtIndex(1).key != "fourth" {
 		t.Error("Wrong value at leftchild", leftChild)
 	}
-	if rightChild.getElementAtIndex(1) != 6 {
+	if rightChild.getElementAtIndex(0).key != "third" {
 		t.Error("Wrong value at rightchild ", rightChild)
 	}
 }
 
 func TestSplitNonLeafNode(t *testing.T) {
 	blockService := initBlockService()
-	child1, err := NewLeafNode([]int64{10, 11, 12, 13, 14}, blockService)
+	child1, err := NewLeafNode([]*Pairs{NewPair("1first", "value"),
+		NewPair("1fourth", "value"), NewPair("1second", "value"), NewPair("1third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child2, err := NewLeafNode([]int64{30, 31, 32, 33, 34}, blockService)
+	child2, err := NewLeafNode([]*Pairs{NewPair("2first", "value"),
+		NewPair("2fourth", "value"), NewPair("2second", "value"), NewPair("2third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child3, err := NewLeafNode([]int64{40, 41, 42, 43, 44}, blockService)
+	child3, err := NewLeafNode([]*Pairs{NewPair("3first", "value"),
+		NewPair("3fourth", "value"), NewPair("3second", "value"), NewPair("3third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child4, err := NewLeafNode([]int64{50, 51, 52, 53, 54}, blockService)
+	child4, err := NewLeafNode([]*Pairs{NewPair("4first", "value"),
+		NewPair("4fourth", "value"), NewPair("4second", "value"), NewPair("4third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child5, err := NewLeafNode([]int64{60, 61, 62, 63, 64}, blockService)
+	child5, err := NewLeafNode([]*Pairs{NewPair("5first", "value"),
+		NewPair("5fourth", "value"), NewPair("5second", "value"), NewPair("5third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child6, err := NewLeafNode([]int64{70, 71, 72, 73, 74}, blockService)
-	if err != nil {
-		t.Error(err)
-	}
-	n, err := NewNodeWithChildren([]int64{15, 35, 45, 55, 65, 75}, []uint64{child1.blockID,
-		child2.blockID, child3.blockID, child4.blockID, child5.blockID,
-		child6.blockID}, blockService)
+
+	n, err := NewNodeWithChildren([]*Pairs{NewPair("nfirst", "value"),
+		NewPair("nfourth", "value"), NewPair("nsecond", "value"), NewPair("nthird", "value")},
+		[]uint64{child1.blockID, child2.blockID, child3.blockID,
+			child4.blockID, child5.blockID}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
@@ -176,62 +206,74 @@ func TestSplitNonLeafNode(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if poppedUpMiddleElement != 55 {
-		t.Error("Wrong middle element, should be 55", poppedUpMiddleElement)
+	if poppedUpMiddleElement.key != "nsecond" {
+		t.Error("Wrong middle element, should be second", poppedUpMiddleElement)
 	}
 	childToBeTested, err := leftChild.getChildAtIndex(2)
 	if err != nil {
 		t.Error(err)
 	}
-	if childToBeTested.getElementAtIndex(4) != 44 {
-		t.Error("Element should be 44", childToBeTested.getElementAtIndex(4))
+	if childToBeTested.getElementAtIndex(2).key != "3second" {
+		t.Error("Element should be 3second", childToBeTested.getElementAtIndex(2).key)
 	}
-	childToBeTested, err = leftChild.getChildAtIndex(3)
+	childToBeTested, err = leftChild.getChildAtIndex(1)
 	if err != nil {
 		t.Error(err)
 	}
-	if childToBeTested.getElementAtIndex(4) != 54 {
-		t.Error("Element should be 54", childToBeTested.getElementAtIndex(4))
+	if childToBeTested.getElementAtIndex(3).key != "2third" {
+		t.Error("Element should be 2third", childToBeTested.getElementAtIndex(3).key)
 	}
 
 	childToBeTested, err = rightChild.getChildAtIndex(1)
 	if err != nil {
 		t.Error(err)
 	}
-	if childToBeTested.getElementAtIndex(4) != 74 {
-		t.Error("Element should be 44", childToBeTested.getElementAtIndex(4))
+	if childToBeTested.getElementAtIndex(3).key != "5third" {
+		t.Error("Element should be 5third", childToBeTested.getElementAtIndex(3).key)
 	}
 }
 
 func TestAddPoppedupElement(t *testing.T) {
 	blockService := initBlockService()
-	child1OfParent, err := NewLeafNode([]int64{1000, 1001, 1002, 1003, 1004}, blockService)
+	child1OfParent, err := NewLeafNode([]*Pairs{NewPair("1first", "value"),
+	NewPair("1fourth", "value"), NewPair("1second", "value"), NewPair("1third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child2OfParent, err := NewLeafNode([]int64{2000, 2001, 2002, 2003, 2004}, blockService)
+	child2OfParent, err := NewLeafNode([]*Pairs{NewPair("2first", "value"),
+	NewPair("2fourth", "value"), NewPair("2second", "value"), NewPair("2third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	parentNode, err := NewNodeWithChildren([]int64{500}, []uint64{child1OfParent.blockID,
+	parentNode, err := NewNodeWithChildren([]*Pairs{NewPair("parentfirst", "value")}, []uint64{child1OfParent.blockID,
 		child2OfParent.blockID}, blockService)
-	child3, err := NewLeafNode([]int64{3000, 3001, 3002, 3003, 3004}, blockService)
+	child3, err := NewLeafNode([]*Pairs{NewPair("3first", "value"),
+	NewPair("3fourth", "value"), NewPair("3second", "value"), NewPair("3third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	child4, err := NewLeafNode([]int64{4000, 4001, 4002, 4003, 4004}, blockService)
+	child4, err := NewLeafNode([]*Pairs{NewPair("4first", "value"),
+	NewPair("4fourth", "value"), NewPair("4second", "value"), NewPair("4third", "value")}, blockService)
 	if err != nil {
 		t.Error(err)
 	}
-	parentNode.AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(55, child3, child4)
+	parentNode.AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(NewPair("popfirst","value"), child3, child4)
 
 	child, err := parentNode.getChildAtIndex(0)
 	if err != nil {
 		t.Error(err)
 	}
-	if child.getElementAtIndex(4) != 3004 {
+	if child.getElementAtIndex(0).key != "1first" {
+		t.Error("Child not inserted at the correct position", child.getElements())
+	}
+
+	child, err = parentNode.getChildAtIndex(2)
+	if err != nil {
+		t.Error(err)
+	}
+	if child.getElementAtIndex(0).key !="4first" {
+		printNodeElements(child)
 		t.Error("Child not inserted at the correct position", child.getElements())
 	}
 
 }
-

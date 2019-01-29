@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -22,8 +23,13 @@ func TestBtreeInsert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	for i := 1; i <= 50; i++ {
-		tree.Insert(int64(i))
+	for i := 1; i <= 100; i++ {
+		key := fmt.Sprintf("key-%d", i)
+		value := fmt.Sprintf("value-%d", i)
+		if i == 230 {
+			println("Inserted 229 elements")
+		}
+		tree.Insert(NewPair(key, value))
 	}
 	// tree.root.PrintTree()
 }
@@ -33,23 +39,27 @@ func TestBtreeGet(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	totalElements := 5000
+	totalElements := 500
 	for i := 1; i <= totalElements; i++ {
-		tree.Insert(int64(i))
+		key := fmt.Sprintf("key-%d", i)
+		value := fmt.Sprintf("value-%d", i)
+		tree.Insert(NewPair(key, value))
 	}
 
 	for i := 1; i <= totalElements; i++ {
-		found, err := tree.Get(int64(i))
+		key := fmt.Sprintf("key-%d", i)
+		found, err := tree.Get(key)
 		if err != nil {
 			t.Error(err)
 		}
 		if !found {
-			t.Error("Value should be found")
+			t.Error("Value should be found ", key)
 		}
 	}
 
 	for i := totalElements + 1; i <= totalElements+1+1000; i++ {
-		found, err := tree.root.Get(int64(i))
+		key := fmt.Sprintf("key-%d", i)
+		found, err := tree.Get(key)
 		if err != nil {
 			t.Error(err)
 		}
