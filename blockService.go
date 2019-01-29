@@ -8,21 +8,23 @@ import (
 const blockSize = 4096
 
 // Based on the below calc
-const maxLeafSize = 253
+const maxLeafSize = 30
 
 // Block -- Make sure that it is accomodated in blockSize = 4096
 type Block struct {
-	id                  uint64   // 4096 - 8 = 4088
-	currentLeafSize     uint64   // 4088 - 8 = 4080
-	currentChildrenSize uint64   // 4080 - 8 = 4072
-	data                []uint64 // 4072 - (8 * 253(maxLeafSize) = 2024) = 2048
-	childrenBlockIds    []uint64 // 2048 - (8 * 254(maxLeafSize+1) = 2032) = 16
+	id                  uint64 // 4096 - 8 = 4088
+	currentLeafSize     uint64 // 4088 - 8 = 4080
+	currentChildrenSize uint64 // 4080 - 8 = 4072
+	// data                []uint64 // 4072 - (8 * 253(maxLeafSize) = 2024) = 2048
+	childrenBlockIds []uint64 // 2048 - (8 * 254(maxLeafSize+1) = 2032) = 16
+	dataSet          []*Pairs // 4072 - (124 * 30) = 352
+	childBlockIDs    []uint64 // 352 - (8 * 30) =  112
 }
 
-// 16 bytes are still wasted
+// 112 bytes are still wasted
 
-func (b *Block) setData(data []uint64) {
-	b.data = data
+func (b *Block) setData(data []*Pairs) {
+	b.dataSet = data
 	b.currentLeafSize = uint64(len(data))
 }
 
@@ -111,6 +113,13 @@ func (bs *BlockService) getBlockFromBuffer(blockBuffer []byte) *Block {
 		block.data[i] = uint64FromBytes(blockBuffer[blockOffset:])
 		blockOffset += 8
 	}
+
+	//Read actual pairs now
+	block.dataSet = make([]*Pairs, block.currentLeafSize)
+	for i := 0; i < int(block.currentLeafSize); i++ {
+		block.dataSet[i] = convertBytesToPair(blockBuffer[blockOffset:])
+		blockOffset += pairSize
+	}
 	// Read children block indexes
 	block.childrenBlockIds = make([]uint64, block.currentChildrenSize)
 	for i := 0; i < int(block.currentChildrenSize); i++ {
@@ -135,6 +144,12 @@ func (bs *BlockService) getBufferFromBlock(block *Block) []byte {
 	for i := 0; i < int(block.currentLeafSize); i++ {
 		copy(blockBuffer[blockOffset:], uint64ToBytes(block.data[i]))
 		blockOffset += 8
+	}
+
+	//Write actual pairs now
+	for i := 0; i < int(block.currentLeafSize); i++ {
+		copy(blockBuffer[blockOffset:], convertPairsToBytes(block.dataSet[i]))
+		blockOffset += pairSize
 	}
 	// Read children block indexes
 	for i := 0; i < int(block.currentChildrenSize); i++ {
