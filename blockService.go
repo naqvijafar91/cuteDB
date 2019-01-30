@@ -72,9 +72,9 @@ func (bs *blockService) getRootBlock() (*diskBlock, error) {
 		// Need to write a new block
 		return bs.newBlock()
 
-	} else {
-		return bs.getBlockFromDiskByBlockNumber(0)
 	}
+	return bs.getBlockFromDiskByBlockNumber(0)
+
 }
 
 func (bs *blockService) getBlockFromDiskByBlockNumber(index int64) (*diskBlock, error) {
