@@ -1,4 +1,4 @@
-package cuteDB
+package cutedb
 
 import (
 	"fmt"
