@@ -48,18 +48,18 @@ func TestBtreeGet(t *testing.T) {
 
 	for i := 1; i <= totalElements; i++ {
 		key := fmt.Sprintf("key-%d", i)
-		found, err := tree.Get(key)
+		value, found, err := tree.Get(key)
 		if err != nil {
 			t.Error(err)
 		}
-		if !found {
+		if !found || value == "" {
 			t.Error("Value should be found ", key)
 		}
 	}
 
 	for i := totalElements + 1; i <= totalElements+1+1000; i++ {
 		key := fmt.Sprintf("key-%d", i)
-		found, err := tree.Get(key)
+		_, found, err := tree.Get(key)
 		if err != nil {
 			t.Error(err)
 		}

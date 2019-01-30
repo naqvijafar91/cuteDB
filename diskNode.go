@@ -409,34 +409,34 @@ func (n *DiskNode) insert(value *Pairs, btree *Btree) (*Pairs, *DiskNode, *DiskN
 	return nil, nil, nil, nil
 }
 
-func (n *DiskNode) searchElementInNode(key string) (bool, int) {
+func (n *DiskNode) searchElementInNode(key string) (string, bool) {
 	for i := 0; i < len(n.getElements()); i++ {
 		if (n.getElementAtIndex(i)).key == key {
-			return true, i
+			return n.getElementAtIndex(i).value, true
 		}
 	}
-	return false, -1
+	return "", false
 }
-func (n *DiskNode) search(key string) (bool, error) {
+func (n *DiskNode) search(key string) (string, error) {
 	/*
 		Algo:
 		1. Find key in current node, if this is leaf node, then return as not found
 		2. Then find the appropriate child node
 		3. goto step 1
 	*/
-	foundInCurrentNode, _ := n.searchElementInNode(key)
+	value, foundInCurrentNode := n.searchElementInNode(key)
 
 	if foundInCurrentNode {
-		return true, nil
+		return value, nil
 	}
 
 	if n.isLeaf() {
-		return false, nil
+		return "", nil
 	}
 
 	node, err := n.GetChildNodeForElement(key)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	return node.search(key)
 }
@@ -446,6 +446,6 @@ func (n *DiskNode) Insert(value *Pairs, btree *Btree) {
 	n.insert(value, btree)
 }
 
-func (n *DiskNode) Get(key string) (bool, error) {
+func (n *DiskNode) Get(key string) (string, error) {
 	return n.search(key)
 }

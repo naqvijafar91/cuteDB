@@ -10,7 +10,7 @@ type Btree struct {
 // Node - Interface for node
 type Node interface {
 	Insert(value *Pairs,btree *Btree)
-	Get(key string) (bool, error)
+	Get(key string) (string, error)
 	PrintTree(level ...int)
 }
 
@@ -44,9 +44,17 @@ func (btree *Btree) Insert(value *Pairs) {
 	btree.root.Insert(value, btree)
 }
 
-func (btree *Btree) Get(key string) (bool,error) {
-	return btree.root.Get(key)
+func (btree *Btree) Get(key string) (string,bool,error) {
+	value,err:= btree.root.Get(key)
+	if err!=nil{
+		return "",false,err
+	}
+	if value=="" {
+		return "",false,nil
+	}
+	return value,true,nil
 }
+
 func (btree *Btree) setRootNode(node Node) {
 	btree.root = node
 }
