@@ -19,7 +19,7 @@ func clearDB() string {
 }
 
 func TestBtreeInsert(t *testing.T) {
-	tree, err := InitializeBtree(clearDB())
+	tree, err := initializeBtree(clearDB())
 	if err != nil {
 		t.Error(err)
 	}
@@ -29,13 +29,13 @@ func TestBtreeInsert(t *testing.T) {
 		if i == 230 {
 			println("Inserted 229 elements")
 		}
-		tree.Insert(NewPair(key, value))
+		tree.insert(newPair(key, value))
 	}
 	// tree.root.PrintTree()
 }
 
 func TestBtreeGet(t *testing.T) {
-	tree, err := InitializeBtree(clearDB())
+	tree, err := initializeBtree(clearDB())
 	if err != nil {
 		t.Error(err)
 	}
@@ -43,12 +43,12 @@ func TestBtreeGet(t *testing.T) {
 	for i := 1; i <= totalElements; i++ {
 		key := fmt.Sprintf("key-%d", i)
 		value := fmt.Sprintf("value-%d", i)
-		tree.Insert(NewPair(key, value))
+		tree.insert(newPair(key, value))
 	}
 
 	for i := 1; i <= totalElements; i++ {
 		key := fmt.Sprintf("key-%d", i)
-		value, found, err := tree.Get(key)
+		value, found, err := tree.get(key)
 		if err != nil {
 			t.Error(err)
 		}
@@ -59,7 +59,7 @@ func TestBtreeGet(t *testing.T) {
 
 	for i := totalElements + 1; i <= totalElements+1+1000; i++ {
 		key := fmt.Sprintf("key-%d", i)
-		_, found, err := tree.Get(key)
+		_, found, err := tree.get(key)
 		if err != nil {
 			t.Error(err)
 		}

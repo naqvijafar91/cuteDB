@@ -44,7 +44,7 @@ const maxchildren = maxLeafSize + 1
 
 // DiskNode - In memory node implementation
 type DiskNode struct {
-	keys             []*Pairs
+	keys             []*pairs
 	childrenBlockIDs []uint64
 	blockID          uint64
 	blockService     *blockService
@@ -60,7 +60,7 @@ func (n *DiskNode) isLeaf() bool {
 }
 
 // PrintTree - Traverse and print the entire tree
-func (n *DiskNode) PrintTree(level ...int) {
+func (n *DiskNode) printTree(level ...int) {
 	var currentLevel int
 	if len(level) == 0 {
 		currentLevel = 1
@@ -74,14 +74,14 @@ func (n *DiskNode) PrintTree(level ...int) {
 		if err != nil {
 			panic(err)
 		}
-		childNode.PrintTree(currentLevel + 1)
+		childNode.printTree(currentLevel + 1)
 	}
 }
 
 /**
 * Do a linear search and insert the element
  */
-func (n *DiskNode) addElement(element *Pairs) int {
+func (n *DiskNode) addElement(element *pairs) int {
 	elements := n.getElements()
 	indexForInsertion := 0
 	elementInsertedInBetween := false
@@ -114,20 +114,20 @@ func (n *DiskNode) hasOverFlown() bool {
 	return false
 }
 
-func (n *DiskNode) getElements() []*Pairs {
+func (n *DiskNode) getElements() []*pairs {
 	return n.keys
 }
 
-func (n *DiskNode) setElements(newElements []*Pairs) {
+func (n *DiskNode) setElements(newElements []*pairs) {
 	n.keys = newElements
 }
 
-func (n *DiskNode) getElementAtIndex(index int) *Pairs {
+func (n *DiskNode) getElementAtIndex(index int) *pairs {
 	return n.keys[index]
 }
 
 func (n *DiskNode) getChildAtIndex(index int) (*DiskNode, error) {
-	return n.blockService.GetNodeAtBlockID(n.childrenBlockIDs[index])
+	return n.blockService.getNodeAtBlockID(n.childrenBlockIDs[index])
 }
 
 func (n *DiskNode) shiftRemainingChildrenToRight(index int) {
@@ -175,8 +175,8 @@ func (n *DiskNode) printNode() {
 	fmt.Println("**********************")
 }
 
-// SplitLeafNode - Split leaf node
-func (n *DiskNode) SplitLeafNode() (*Pairs, *DiskNode, *DiskNode, error) {
+// splitLeafNode - Split leaf node
+func (n *DiskNode) splitLeafNode() (*pairs, *DiskNode, *DiskNode, error) {
 	/**
 		LEAF SPLITTING WITHOUT CHILDREN ALGORITHM
 				If its full, then  make two new child nodes without the middle node ( NODE CREATION WILL TAKE PLACE HERE)
@@ -195,19 +195,19 @@ func (n *DiskNode) SplitLeafNode() (*Pairs, *DiskNode, *DiskNode, error) {
 	elements2 := elements[midIndex+1 : len(elements)]
 
 	// Now lets construct new Nodes from these 2 element arrays
-	leftNode, err := NewLeafNode(elements1, n.blockService)
+	leftNode, err := newLeafNode(elements1, n.blockService)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	rightNode, err := NewLeafNode(elements2, n.blockService)
+	rightNode, err := newLeafNode(elements2, n.blockService)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	return middle, leftNode, rightNode, nil
 }
 
-//SplitNonLeafNode - Split non leaf node
-func (n *DiskNode) SplitNonLeafNode() (*Pairs, *DiskNode, *DiskNode, error) {
+//splitNonLeafNode - Split non leaf node
+func (n *DiskNode) splitNonLeafNode() (*pairs, *DiskNode, *DiskNode, error) {
 	/**
 		NON-LEAF NODE SPLITTING ALGORITHM WITH CHILDREN MANIPULATION
 		If its full, sort it and make two new child nodes, Leaf Splitting with children Algorithm:
@@ -235,20 +235,20 @@ func (n *DiskNode) SplitNonLeafNode() (*Pairs, *DiskNode, *DiskNode, error) {
 	children2 := children[midIndex+1 : len(children)]
 
 	// Now lets construct new Nodes from these 2 element arrays
-	leftNode, err := NewNodeWithChildren(elements1, children1, n.blockService)
+	leftNode, err := newNodeWithChildren(elements1, children1, n.blockService)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	rightNode, err := NewNodeWithChildren(elements2, children2, n.blockService)
+	rightNode, err := newNodeWithChildren(elements2, children2, n.blockService)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	return middle, leftNode, rightNode, nil
 }
 
-// AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren - Insert element received as a reaction
+// addPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren - Insert element received as a reaction
 // from insert operation at child nodes
-func (n *DiskNode) AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(element *Pairs, leftNode *DiskNode, rightNode *DiskNode) {
+func (n *DiskNode) addPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(element *pairs, leftNode *DiskNode, rightNode *DiskNode) {
 	/**
 		POPPED UP JOINING ALGORITHM
 			Insert into current Node, Popped up element and two child pointers insertion algorithm, Popped Up Joining Algorithm:
@@ -266,44 +266,44 @@ func (n *DiskNode) AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(ele
 	n.setChildAtIndex(insertionIndex+1, rightNode)
 }
 
-// NewLeafNode - Create a new leaf node without children
-func NewLeafNode(elements []*Pairs, bs *blockService) (*DiskNode, error) {
+// newLeafNode - Create a new leaf node without children
+func newLeafNode(elements []*pairs, bs *blockService) (*DiskNode, error) {
 	node := &DiskNode{keys: elements, blockService: bs}
 	//persist the node to disk
-	err := bs.SaveNewNodeToDisk(node)
+	err := bs.saveNewNodeToDisk(node)
 	if err != nil {
 		return nil, err
 	}
 	return node, nil
 }
 
-// NewNodeWithChildren - Create a non leaf node with children
-func NewNodeWithChildren(elements []*Pairs, childrenBlockIDs []uint64, bs *blockService) (*DiskNode, error) {
+// newNodeWithChildren - Create a non leaf node with children
+func newNodeWithChildren(elements []*pairs, childrenBlockIDs []uint64, bs *blockService) (*DiskNode, error) {
 	node := &DiskNode{keys: elements, childrenBlockIDs: childrenBlockIDs, blockService: bs}
 	//persist this node to disk
-	err := bs.SaveNewNodeToDisk(node)
+	err := bs.saveNewNodeToDisk(node)
 	if err != nil {
 		return nil, err
 	}
 	return node, nil
 }
 
-// NewRootNodeWithSingleElementAndTwoChildren - Create a new root node
-func NewRootNodeWithSingleElementAndTwoChildren(element *Pairs, leftChildBlockID uint64,
+// newRootNodeWithSingleElementAndTwoChildren - Create a new root node
+func newRootNodeWithSingleElementAndTwoChildren(element *pairs, leftChildBlockID uint64,
 	rightChildBlockID uint64, bs *blockService) (*DiskNode, error) {
-	elements := []*Pairs{element}
+	elements := []*pairs{element}
 	childrenBlockIDs := []uint64{leftChildBlockID, rightChildBlockID}
 	node := &DiskNode{keys: elements, childrenBlockIDs: childrenBlockIDs, blockService: bs}
 	//persist this node to disk
-	err := bs.UpdateRootNode(node)
+	err := bs.updateRootNode(node)
 	if err != nil {
 		return nil, err
 	}
 	return node, nil
 }
 
-// GetChildNodeForElement - Get Correct Traversal path for insertion
-func (n *DiskNode) GetChildNodeForElement(key string) (*DiskNode, error) {
+// getChildNodeForElement - Get Correct Traversal path for insertion
+func (n *DiskNode) getChildNodeForElement(key string) (*DiskNode, error) {
 	/** CHILD NODE SEARCHING ALGORITHM
 		If this is not a leaf node, then find out the proper child node, Child Node Searching Algorithm:
 	    1. Input : Value to be inserted, the current Node. Output : Pointer to the childnode
@@ -321,43 +321,43 @@ func (n *DiskNode) GetChildNodeForElement(key string) (*DiskNode, error) {
 	return n.getLastChildNode()
 }
 
-func (n *DiskNode) insert(value *Pairs, btree *Btree) (*Pairs, *DiskNode, *DiskNode, error) {
+func (n *DiskNode) insert(value *pairs, bt *btree) (*pairs, *DiskNode, *DiskNode, error) {
 
 	if n.isLeaf() {
 		n.addElement(value)
 		if !n.hasOverFlown() {
 			// So lets store this updated node on disk
-			err := n.blockService.UpdateNodeToDisk(n)
+			err := n.blockService.updateNodeToDisk(n)
 			if err != nil {
 				return nil, nil, nil, err
 			}
 			return nil, nil, nil, nil
 		}
-		if btree.isRootNode(n) {
-			poppedMiddleElement, leftNode, rightNode, err := n.SplitLeafNode()
+		if bt.isRootNode(n) {
+			poppedMiddleElement, leftNode, rightNode, err := n.splitLeafNode()
 			if err != nil {
 				return nil, nil, nil, err
 			}
 			//NOTE : NODE CREATION WILL TAKE PLACE HERE
-			newRootNode, err := NewRootNodeWithSingleElementAndTwoChildren(poppedMiddleElement,
+			newRootNode, err := newRootNodeWithSingleElementAndTwoChildren(poppedMiddleElement,
 				leftNode.blockID, rightNode.blockID, n.blockService)
 			if err != nil {
 				return nil, nil, nil, err
 			}
-			btree.setRootNode(newRootNode)
+			bt.setRootNode(newRootNode)
 			return nil, nil, nil, nil
 
 		}
 		// Split the node and return to parent function with pooped up element and left,right nodes
-		return n.SplitLeafNode()
+		return n.splitLeafNode()
 
 	}
 	// Get the child Node for insertion
-	childNodeToBeInserted, err := n.GetChildNodeForElement(value.key)
+	childNodeToBeInserted, err := n.getChildNodeForElement(value.key)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	poppedMiddleElement, leftNode, rightNode, err := childNodeToBeInserted.insert(value, btree)
+	poppedMiddleElement, leftNode, rightNode, err := childNodeToBeInserted.insert(value, bt)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -367,12 +367,12 @@ func (n *DiskNode) insert(value *Pairs, btree *Btree) (*Pairs, *DiskNode, *DiskN
 	}
 	// Insert popped up element into current node along with updating the child pointers
 	// with new left and right nodes returned
-	n.AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(poppedMiddleElement, leftNode, rightNode)
+	n.addPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(poppedMiddleElement, leftNode, rightNode)
 
 	if !n.hasOverFlown() {
 		// this means that element has been easily inserted into current parent Node
 		// without overflowing
-		err := n.blockService.UpdateNodeToDisk(n)
+		err := n.blockService.updateNodeToDisk(n)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -381,7 +381,7 @@ func (n *DiskNode) insert(value *Pairs, btree *Btree) (*Pairs, *DiskNode, *DiskN
 	}
 	// this means that the current parent node has overflown, we need to split this up
 	// and move the popped up element upwards if this is not the root
-	poppedMiddleElement, leftNode, rightNode, err = n.SplitNonLeafNode()
+	poppedMiddleElement, leftNode, rightNode, err = n.splitNonLeafNode()
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -394,10 +394,10 @@ func (n *DiskNode) insert(value *Pairs, btree *Btree) (*Pairs, *DiskNode, *DiskN
 	            4. return null,null,null
 	*/
 
-	if !btree.isRootNode(n) {
+	if !bt.isRootNode(n) {
 		return poppedMiddleElement, leftNode, rightNode, nil
 	}
-	newRootNode, err := NewRootNodeWithSingleElementAndTwoChildren(poppedMiddleElement,
+	newRootNode, err := newRootNodeWithSingleElementAndTwoChildren(poppedMiddleElement,
 		leftNode.blockID, rightNode.blockID, n.blockService)
 	if err != nil {
 		return nil, nil, nil, err
@@ -405,7 +405,7 @@ func (n *DiskNode) insert(value *Pairs, btree *Btree) (*Pairs, *DiskNode, *DiskN
 
 	//@Todo: Update the metadata somewhere so that we can read this new root node
 	//next time
-	btree.setRootNode(newRootNode)
+	bt.setRootNode(newRootNode)
 	return nil, nil, nil, nil
 }
 
@@ -434,7 +434,7 @@ func (n *DiskNode) search(key string) (string, error) {
 		return "", nil
 	}
 
-	node, err := n.GetChildNodeForElement(key)
+	node, err := n.getChildNodeForElement(key)
 	if err != nil {
 		return "", err
 	}
@@ -442,10 +442,14 @@ func (n *DiskNode) search(key string) (string, error) {
 }
 
 // Insert - Insert value into Node
-func (n *DiskNode) Insert(value *Pairs, btree *Btree) {
-	n.insert(value, btree)
+func (n *DiskNode) insertPair(value *pairs, bt *btree) error {
+	_,_,_,err:=n.insert(value, bt)
+	if err!=nil {
+		return err
+	}
+	return nil
 }
 
-func (n *DiskNode) Get(key string) (string, error) {
+func (n *DiskNode) getValue(key string) (string, error) {
 	return n.search(key)
 }

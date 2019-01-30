@@ -18,7 +18,7 @@ func initBlockService() *blockService {
 	if err != nil {
 		panic(err)
 	}
-	return NewBlockService(file)
+	return newBlockService(file)
 }
 
 func TestShouldGetNegativeIfBlockNotPresent(t *testing.T) {
@@ -31,7 +31,7 @@ func TestShouldGetNegativeIfBlockNotPresent(t *testing.T) {
 
 func TestShouldSuccessfullyInitializeNewBlock(t *testing.T) {
 	blockService := initBlockService()
-	block, err := blockService.GetRootBlock()
+	block, err := blockService.getRootBlock()
 	if err != nil {
 		t.Error(err)
 	}
@@ -46,7 +46,7 @@ func TestShouldSuccessfullyInitializeNewBlock(t *testing.T) {
 
 func TestShouldSaveNewBlockOnDisk(t *testing.T) {
 	blockService := initBlockService()
-	block, err := blockService.GetRootBlock()
+	block, err := blockService.getRootBlock()
 	if err != nil {
 		t.Error(err)
 	}
@@ -57,17 +57,17 @@ func TestShouldSaveNewBlockOnDisk(t *testing.T) {
 	if block.currentLeafSize != 0 {
 		t.Error("Block leaf size should be zero")
 	}
-	elements := make([]*Pairs, 3)
-	elements[0] = NewPair("hola", "amigos")
-	elements[1] = NewPair("foo", "bar")
-	elements[2] = NewPair("gooz", "bumps")
+	elements := make([]*pairs, 3)
+	elements[0] = newPair("hola", "amigos")
+	elements[1] = newPair("foo", "bar")
+	elements[2] = newPair("gooz", "bumps")
 	block.setData(elements)
 	err = blockService.writeBlockToDisk(block)
 	if err != nil {
 		t.Error(err)
 	}
 
-	block, err = blockService.GetRootBlock()
+	block, err = blockService.getRootBlock()
 	if err != nil {
 		t.Error(err)
 	}
@@ -78,7 +78,7 @@ func TestShouldSaveNewBlockOnDisk(t *testing.T) {
 }
 
 func TestShouldConvertPairToAndFromBytes(t *testing.T) {
-	pair := &Pairs{}
+	pair := &pairs{}
 	pair.setKey("Hola  ")
 	pair.setValue("Amigos")
 	pairBytes := convertPairsToBytes(pair)
@@ -98,10 +98,10 @@ func TestShouldConvertBlockToAndFromBytes(t *testing.T) {
 	block := &diskBlock{}
 	block.setChildren([]uint64{2, 3, 4, 6})
 
-	elements := make([]*Pairs, 3)
-	elements[0] = NewPair("hola", "amigos")
-	elements[1] = NewPair("foo", "bar")
-	elements[2] = NewPair("gooz", "bumps")
+	elements := make([]*pairs, 3)
+	elements[0] = newPair("hola", "amigos")
+	elements[1] = newPair("foo", "bar")
+	elements[2] = newPair("gooz", "bumps")
 	block.setData(elements)
 	blockBuffer := blockService.getBufferFromBlock(block)
 	convertedBlock := blockService.getBlockFromBuffer(blockBuffer)
@@ -127,8 +127,8 @@ func TestShouldConvertToAndFromDiskNode(t *testing.T) {
 	bs := initBlockService()
 	node := &DiskNode{}
 	node.blockID = 55
-	elements := make([]*Pairs, 3)
-	elements[0] = NewPair("hola", "amigos")
+	elements := make([]*pairs, 3)
+	elements[0] = newPair("hola", "amigos")
 	node.keys = elements
 	node.childrenBlockIDs = []uint64{1000, 10001}
 	block := bs.convertDiskNodeToBlock(node)

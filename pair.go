@@ -5,31 +5,31 @@ import "encoding/binary"
 // 2+2+30+90 = 124
 const pairSize = 124
 
-type Pairs struct {
+type pairs struct {
 	keyLen   uint16 // 2
 	valueLen uint16 // 2
 	key      string // 30
 	value    string // 90
 }
 
-func (p *Pairs) setKey(key string) {
+func (p *pairs) setKey(key string) {
 	p.key = key
 	p.keyLen = uint16(len(key))
 }
 
-func (p *Pairs) setValue(value string) {
+func (p *pairs) setValue(value string) {
 	p.value = value
 	p.valueLen = uint16(len(value))
 }
 
-func NewPair(key string, value string) *Pairs {
-	pair := &Pairs{}
+func newPair(key string, value string) *pairs {
+	pair := &pairs{}
 	pair.setKey(key)
 	pair.setValue(value)
 	return pair
 }
 
-func convertPairsToBytes(pair *Pairs) []byte {
+func convertPairsToBytes(pair *pairs) []byte {
 	pairByte := make([]byte, pairSize)
 	var pairOffset uint16
 	pairOffset = 0
@@ -45,8 +45,8 @@ func convertPairsToBytes(pair *Pairs) []byte {
 	return pairByte
 }
 
-func convertBytesToPair(pairByte []byte) *Pairs {
-	pair := &Pairs{}
+func convertBytesToPair(pairByte []byte) *pairs {
+	pair := &pairs{}
 	var pairOffset uint16
 	pairOffset = 0
 	//Read key length

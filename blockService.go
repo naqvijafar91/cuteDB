@@ -16,12 +16,12 @@ type diskBlock struct {
 	currentLeafSize     uint64   // 4088 - 8 = 4080
 	currentChildrenSize uint64   // 4080 - 8 = 4072
 	childrenBlockIds    []uint64 // 352 - (8 * 30) =  112
-	dataSet             []*Pairs // 4072 - (124 * 30) = 352
+	dataSet             []*pairs // 4072 - (124 * 30) = 352
 }
 
 // 112 bytes are still wasted
 
-func (b *diskBlock) setData(data []*Pairs) {
+func (b *diskBlock) setData(data []*pairs) {
 	b.dataSet = data
 	b.currentLeafSize = uint64(len(data))
 }
@@ -62,7 +62,7 @@ func (bs *blockService) getLatestBlockID() (int64, error) {
 }
 
 //@Todo:Store current root block data somewhere else
-func (bs *blockService) GetRootBlock() (*diskBlock, error) {
+func (bs *blockService) getRootBlock() (*diskBlock, error) {
 
 	/*
 		1. Check if root block exists
@@ -70,14 +70,14 @@ func (bs *blockService) GetRootBlock() (*diskBlock, error) {
 	*/
 	if !bs.rootBlockExists() {
 		// Need to write a new block
-		return bs.NewBlock()
+		return bs.newBlock()
 
 	} else {
-		return bs.GetBlockFromDiskByBlockNumber(0)
+		return bs.getBlockFromDiskByBlockNumber(0)
 	}
 }
 
-func (bs *blockService) GetBlockFromDiskByBlockNumber(index int64) (*diskBlock, error) {
+func (bs *blockService) getBlockFromDiskByBlockNumber(index int64) (*diskBlock, error) {
 
 	if index < 0 {
 		panic("Index less than 0 asked")
@@ -106,7 +106,7 @@ func (bs *blockService) getBlockFromBuffer(blockBuffer []byte) *diskBlock {
 	block.currentChildrenSize = uint64FromBytes(blockBuffer[blockOffset:])
 	blockOffset += 8
 	//Read actual pairs now
-	block.dataSet = make([]*Pairs, block.currentLeafSize)
+	block.dataSet = make([]*pairs, block.currentLeafSize)
 	for i := 0; i < int(block.currentLeafSize); i++ {
 		block.dataSet[i] = convertBytesToPair(blockBuffer[blockOffset:])
 		blockOffset += pairSize
@@ -145,7 +145,7 @@ func (bs *blockService) getBufferFromBlock(block *diskBlock) []byte {
 	return blockBuffer
 }
 
-func (bs *blockService) NewBlock() (*diskBlock, error) {
+func (bs *blockService) newBlock() (*diskBlock, error) {
 
 	latestBlockID, err := bs.getLatestBlockID()
 	block := &diskBlock{}
@@ -177,7 +177,7 @@ func (bs *blockService) writeBlockToDisk(block *diskBlock) error {
 func (bs *blockService) convertDiskNodeToBlock(node *DiskNode) *diskBlock {
 	block := &diskBlock{}
 	block.id = node.blockID
-	tempElements := make([]*Pairs, len(node.getElements()))
+	tempElements := make([]*pairs, len(node.getElements()))
 	for index, element := range node.getElements() {
 		tempElements[index] = element
 	}
@@ -190,8 +190,8 @@ func (bs *blockService) convertDiskNodeToBlock(node *DiskNode) *diskBlock {
 	return block
 }
 
-func (bs *blockService) GetNodeAtBlockID(blockID uint64) (*DiskNode, error) {
-	block, err := bs.GetBlockFromDiskByBlockNumber(int64(blockID))
+func (bs *blockService) getNodeAtBlockID(blockID uint64) (*DiskNode, error) {
+	block, err := bs.getBlockFromDiskByBlockNumber(int64(blockID))
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (bs *blockService) convertBlockToDiskNode(block *diskBlock) *DiskNode {
 	node := &DiskNode{}
 	node.blockService = bs
 	node.blockID = block.id
-	node.keys = make([]*Pairs, block.currentLeafSize)
+	node.keys = make([]*pairs, block.currentLeafSize)
 	for index := range node.keys {
 		node.keys[index] = block.dataSet[index]
 	}
@@ -214,7 +214,7 @@ func (bs *blockService) convertBlockToDiskNode(block *diskBlock) *DiskNode {
 }
 
 // NewBlockFromNode - Save a new node to disk block
-func (bs *blockService) SaveNewNodeToDisk(n *DiskNode) error {
+func (bs *blockService) saveNewNodeToDisk(n *DiskNode) error {
 	// Get block id to be assigned to this block
 	latestBlockID, err := bs.getLatestBlockID()
 	if err != nil {
@@ -225,17 +225,17 @@ func (bs *blockService) SaveNewNodeToDisk(n *DiskNode) error {
 	return bs.writeBlockToDisk(block)
 }
 
-func (bs *blockService) UpdateNodeToDisk(n *DiskNode) error {
+func (bs *blockService) updateNodeToDisk(n *DiskNode) error {
 	block := bs.convertDiskNodeToBlock(n)
 	return bs.writeBlockToDisk(block)
 }
 
-func (bs *blockService) UpdateRootNode(n *DiskNode) error {
+func (bs *blockService) updateRootNode(n *DiskNode) error {
 	n.blockID = 0
-	return bs.UpdateNodeToDisk(n)
+	return bs.updateNodeToDisk(n)
 }
 
-func NewBlockService(file *os.File) *blockService {
+func newBlockService(file *os.File) *blockService {
 	return &blockService{file}
 }
 

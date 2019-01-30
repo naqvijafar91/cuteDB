@@ -6,12 +6,12 @@ type diskNodeService struct {
 	file *os.File
 }
 
-func NewDiskNodeService(file *os.File) *diskNodeService {
+func newDiskNodeService(file *os.File) *diskNodeService {
 	return &diskNodeService{file: file}
 }
-func (dns *diskNodeService) GetRootNodeFromDisk() (*DiskNode, error) {
-	bs := NewBlockService(dns.file)
-	rootBlock, err := bs.GetRootBlock()
+func (dns *diskNodeService) getRootNodeFromDisk() (*DiskNode, error) {
+	bs := newBlockService(dns.file)
+	rootBlock, err := bs.getRootBlock()
 	if err != nil {
 		return nil, err
 	}

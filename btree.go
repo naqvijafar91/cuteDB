@@ -2,24 +2,24 @@ package cutedb
 
 import "os"
 
-// Btree - Our in memory Btree struct
-type Btree struct {
+// btree - Our in memory btree struct
+type btree struct {
 	root node
 }
 
 // node - Interface for node
 type node interface {
-	Insert(value *Pairs, btree *Btree)
-	Get(key string) (string, error)
-	PrintTree(level ...int)
+	insertPair(value *pairs, bt *btree) error
+	getValue(key string) (string, error)
+	printTree(level ...int)
 }
 
-func (btree *Btree) isRootNode(n node) bool {
-	return btree.root == n
+func (bt *btree) isRootNode(n node) bool {
+	return bt.root == n
 }
 
 // NewBtree - Create a new btree
-func InitializeBtree(path ...string) (*Btree, error) {
+func initializeBtree(path ...string) (*btree, error) {
 	if len(path) == 0 {
 		path = make([]string, 1)
 		path[0] = "./db/freedom.db"
@@ -27,24 +27,24 @@ func InitializeBtree(path ...string) (*Btree, error) {
 
 	file, err := os.OpenFile(path[0], os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-	dns := NewDiskNodeService(file)
+	dns := newDiskNodeService(file)
 
-	root, err := dns.GetRootNodeFromDisk()
+	root, err := dns.getRootNodeFromDisk()
 	if err != nil {
 		panic(err)
 	}
-	return &Btree{root: root}, nil
+	return &btree{root: root}, nil
 }
 
-// Insert - Insert element in tree
-func (btree *Btree) Insert(value *Pairs) {
-	btree.root.Insert(value, btree)
+// insert - insert element in tree
+func (bt *btree) insert(value *pairs) error {
+	return bt.root.insertPair(value, bt)
 }
 
-func (btree *Btree) Get(key string) (string, bool, error) {
-	value, err := btree.root.Get(key)
+func (bt *btree) get(key string) (string, bool, error) {
+	value, err := bt.root.getValue(key)
 	if err != nil {
 		return "", false, err
 	}
@@ -54,6 +54,6 @@ func (btree *Btree) Get(key string) (string, bool, error) {
 	return value, true, nil
 }
 
-func (btree *Btree) setRootNode(n node) {
-	btree.root = n
+func (bt *btree) setRootNode(n node) {
+	bt.root = n
 }
