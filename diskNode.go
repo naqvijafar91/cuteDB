@@ -47,7 +47,7 @@ type DiskNode struct {
 	keys             []*Pairs
 	childrenBlockIDs []uint64
 	blockID          uint64
-	blockService     *BlockService
+	blockService     *blockService
 }
 
 func (n *DiskNode) isLeaf() bool {
@@ -262,12 +262,12 @@ func (n *DiskNode) AddPoppedUpElementIntoCurrentNodeAndUpdateWithNewChildren(ele
 	insertionIndex := n.addElement(element)
 	n.setChildAtIndex(insertionIndex, leftNode)
 	//Shift remaining elements to the right and add this
-	n.shiftRemainingChildrenToRight(insertionIndex+1)
+	n.shiftRemainingChildrenToRight(insertionIndex + 1)
 	n.setChildAtIndex(insertionIndex+1, rightNode)
 }
 
 // NewLeafNode - Create a new leaf node without children
-func NewLeafNode(elements []*Pairs, bs *BlockService) (*DiskNode, error) {
+func NewLeafNode(elements []*Pairs, bs *blockService) (*DiskNode, error) {
 	node := &DiskNode{keys: elements, blockService: bs}
 	//persist the node to disk
 	err := bs.SaveNewNodeToDisk(node)
@@ -278,7 +278,7 @@ func NewLeafNode(elements []*Pairs, bs *BlockService) (*DiskNode, error) {
 }
 
 // NewNodeWithChildren - Create a non leaf node with children
-func NewNodeWithChildren(elements []*Pairs, childrenBlockIDs []uint64, bs *BlockService) (*DiskNode, error) {
+func NewNodeWithChildren(elements []*Pairs, childrenBlockIDs []uint64, bs *blockService) (*DiskNode, error) {
 	node := &DiskNode{keys: elements, childrenBlockIDs: childrenBlockIDs, blockService: bs}
 	//persist this node to disk
 	err := bs.SaveNewNodeToDisk(node)
@@ -290,12 +290,12 @@ func NewNodeWithChildren(elements []*Pairs, childrenBlockIDs []uint64, bs *Block
 
 // NewRootNodeWithSingleElementAndTwoChildren - Create a new root node
 func NewRootNodeWithSingleElementAndTwoChildren(element *Pairs, leftChildBlockID uint64,
-	rightChildBlockID uint64, blockService *BlockService) (*DiskNode, error) {
+	rightChildBlockID uint64, bs *blockService) (*DiskNode, error) {
 	elements := []*Pairs{element}
 	childrenBlockIDs := []uint64{leftChildBlockID, rightChildBlockID}
-	node := &DiskNode{keys: elements, childrenBlockIDs: childrenBlockIDs, blockService: blockService}
+	node := &DiskNode{keys: elements, childrenBlockIDs: childrenBlockIDs, blockService: bs}
 	//persist this node to disk
-	err := blockService.UpdateRootNode(node)
+	err := bs.UpdateRootNode(node)
 	if err != nil {
 		return nil, err
 	}

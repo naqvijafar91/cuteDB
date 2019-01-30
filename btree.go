@@ -4,21 +4,20 @@ import "os"
 
 // Btree - Our in memory Btree struct
 type Btree struct {
-	root Node
+	root node
 }
 
-// Node - Interface for node
-type Node interface {
-	Insert(value *Pairs,btree *Btree)
+// node - Interface for node
+type node interface {
+	Insert(value *Pairs, btree *Btree)
 	Get(key string) (string, error)
 	PrintTree(level ...int)
 }
 
-func (btree *Btree) isRootNode(node Node) bool {
-	return btree.root == node
+func (btree *Btree) isRootNode(n node) bool {
+	return btree.root == n
 }
 
-//@Todo: Remove panic from here
 // NewBtree - Create a new btree
 func InitializeBtree(path ...string) (*Btree, error) {
 	if len(path) == 0 {
@@ -28,7 +27,7 @@ func InitializeBtree(path ...string) (*Btree, error) {
 
 	file, err := os.OpenFile(path[0], os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		panic(err)
+		return nil,err
 	}
 	dns := NewDiskNodeService(file)
 
@@ -44,17 +43,17 @@ func (btree *Btree) Insert(value *Pairs) {
 	btree.root.Insert(value, btree)
 }
 
-func (btree *Btree) Get(key string) (string,bool,error) {
-	value,err:= btree.root.Get(key)
-	if err!=nil{
-		return "",false,err
+func (btree *Btree) Get(key string) (string, bool, error) {
+	value, err := btree.root.Get(key)
+	if err != nil {
+		return "", false, err
 	}
-	if value=="" {
-		return "",false,nil
+	if value == "" {
+		return "", false, nil
 	}
-	return value,true,nil
+	return value, true, nil
 }
 
-func (btree *Btree) setRootNode(node Node) {
-	btree.root = node
+func (btree *Btree) setRootNode(n node) {
+	btree.root = n
 }

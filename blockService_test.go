@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func initBlockService() *BlockService {
+func initBlockService() *blockService {
 	path := "./db/test.db"
 	if _, err := os.Stat(path); err == nil {
 		// path/to/whatever exists
@@ -95,7 +95,7 @@ func TestShouldConvertPairToAndFromBytes(t *testing.T) {
 
 func TestShouldConvertBlockToAndFromBytes(t *testing.T) {
 	blockService := initBlockService()
-	block := &Block{}
+	block := &diskBlock{}
 	block.setChildren([]uint64{2, 3, 4, 6})
 
 	elements := make([]*Pairs, 3)
@@ -105,7 +105,6 @@ func TestShouldConvertBlockToAndFromBytes(t *testing.T) {
 	block.setData(elements)
 	blockBuffer := blockService.getBufferFromBlock(block)
 	convertedBlock := blockService.getBlockFromBuffer(blockBuffer)
-
 
 	if convertedBlock.childrenBlockIds[2] != 4 {
 		t.Error("Should contain 4 at 2nd index")

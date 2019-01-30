@@ -9,23 +9,24 @@ const blockSize = 4096
 
 // Based on the below calc
 const maxLeafSize = 30
-// Block -- Make sure that it is accomodated in blockSize = 4096
-type Block struct {
-	id                  uint64 // 4096 - 8 = 4088
-	currentLeafSize     uint64 // 4088 - 8 = 4080
-	currentChildrenSize uint64 // 4080 - 8 = 4072
-	childrenBlockIds []uint64 // 352 - (8 * 30) =  112
-	dataSet          []*Pairs // 4072 - (124 * 30) = 352
+
+// diskBlock -- Make sure that it is accomodated in blockSize = 4096
+type diskBlock struct {
+	id                  uint64   // 4096 - 8 = 4088
+	currentLeafSize     uint64   // 4088 - 8 = 4080
+	currentChildrenSize uint64   // 4080 - 8 = 4072
+	childrenBlockIds    []uint64 // 352 - (8 * 30) =  112
+	dataSet             []*Pairs // 4072 - (124 * 30) = 352
 }
 
 // 112 bytes are still wasted
 
-func (b *Block) setData(data []*Pairs) {
+func (b *diskBlock) setData(data []*Pairs) {
 	b.dataSet = data
 	b.currentLeafSize = uint64(len(data))
 }
 
-func (b *Block) setChildren(childrenBlockIds []uint64) {
+func (b *diskBlock) setChildren(childrenBlockIds []uint64) {
 	b.childrenBlockIds = childrenBlockIds
 	b.currentChildrenSize = uint64(len(childrenBlockIds))
 }
@@ -41,11 +42,11 @@ func uint64FromBytes(b []byte) uint64 {
 	return i
 }
 
-type BlockService struct {
+type blockService struct {
 	file *os.File
 }
 
-func (bs *BlockService) getLatestBlockID() (int64, error) {
+func (bs *blockService) getLatestBlockID() (int64, error) {
 
 	fi, err := bs.file.Stat()
 	if err != nil {
@@ -61,7 +62,7 @@ func (bs *BlockService) getLatestBlockID() (int64, error) {
 }
 
 //@Todo:Store current root block data somewhere else
-func (bs *BlockService) GetRootBlock() (*Block, error) {
+func (bs *blockService) GetRootBlock() (*diskBlock, error) {
 
 	/*
 		1. Check if root block exists
@@ -76,7 +77,7 @@ func (bs *BlockService) GetRootBlock() (*Block, error) {
 	}
 }
 
-func (bs *BlockService) GetBlockFromDiskByBlockNumber(index int64) (*Block, error) {
+func (bs *blockService) GetBlockFromDiskByBlockNumber(index int64) (*diskBlock, error) {
 
 	if index < 0 {
 		panic("Index less than 0 asked")
@@ -93,9 +94,9 @@ func (bs *BlockService) GetBlockFromDiskByBlockNumber(index int64) (*Block, erro
 	return block, nil
 }
 
-func (bs *BlockService) getBlockFromBuffer(blockBuffer []byte) *Block {
+func (bs *blockService) getBlockFromBuffer(blockBuffer []byte) *diskBlock {
 	blockOffset := 0
-	block := &Block{}
+	block := &diskBlock{}
 
 	//Read Block index
 	block.id = uint64FromBytes(blockBuffer[blockOffset:])
@@ -119,7 +120,7 @@ func (bs *BlockService) getBlockFromBuffer(blockBuffer []byte) *Block {
 	return block
 }
 
-func (bs *BlockService) getBufferFromBlock(block *Block) []byte {
+func (bs *blockService) getBufferFromBlock(block *diskBlock) []byte {
 	blockBuffer := make([]byte, blockSize)
 	blockOffset := 0
 
@@ -144,10 +145,10 @@ func (bs *BlockService) getBufferFromBlock(block *Block) []byte {
 	return blockBuffer
 }
 
-func (bs *BlockService) NewBlock() (*Block, error) {
+func (bs *blockService) NewBlock() (*diskBlock, error) {
 
 	latestBlockID, err := bs.getLatestBlockID()
-	block := &Block{}
+	block := &diskBlock{}
 	if err != nil {
 		// This means that no file exists
 		block.id = 0
@@ -162,7 +163,7 @@ func (bs *BlockService) NewBlock() (*Block, error) {
 	return block, nil
 }
 
-func (bs *BlockService) writeBlockToDisk(block *Block) error {
+func (bs *blockService) writeBlockToDisk(block *diskBlock) error {
 	seekOffset := blockSize * block.id
 	blockBuffer := bs.getBufferFromBlock(block)
 	bs.file.Seek(int64(seekOffset), 0)
@@ -173,8 +174,8 @@ func (bs *BlockService) writeBlockToDisk(block *Block) error {
 	return nil
 }
 
-func (bs *BlockService) convertDiskNodeToBlock(node *DiskNode) *Block {
-	block := &Block{}
+func (bs *blockService) convertDiskNodeToBlock(node *DiskNode) *diskBlock {
+	block := &diskBlock{}
 	block.id = node.blockID
 	tempElements := make([]*Pairs, len(node.getElements()))
 	for index, element := range node.getElements() {
@@ -189,7 +190,7 @@ func (bs *BlockService) convertDiskNodeToBlock(node *DiskNode) *Block {
 	return block
 }
 
-func (bs *BlockService) GetNodeAtBlockID(blockID uint64) (*DiskNode, error) {
+func (bs *blockService) GetNodeAtBlockID(blockID uint64) (*DiskNode, error) {
 	block, err := bs.GetBlockFromDiskByBlockNumber(int64(blockID))
 	if err != nil {
 		return nil, err
@@ -197,7 +198,7 @@ func (bs *BlockService) GetNodeAtBlockID(blockID uint64) (*DiskNode, error) {
 	return bs.convertBlockToDiskNode(block), nil
 }
 
-func (bs *BlockService) convertBlockToDiskNode(block *Block) *DiskNode {
+func (bs *blockService) convertBlockToDiskNode(block *diskBlock) *DiskNode {
 	node := &DiskNode{}
 	node.blockService = bs
 	node.blockID = block.id
@@ -213,7 +214,7 @@ func (bs *BlockService) convertBlockToDiskNode(block *Block) *DiskNode {
 }
 
 // NewBlockFromNode - Save a new node to disk block
-func (bs *BlockService) SaveNewNodeToDisk(n *DiskNode) error {
+func (bs *blockService) SaveNewNodeToDisk(n *DiskNode) error {
 	// Get block id to be assigned to this block
 	latestBlockID, err := bs.getLatestBlockID()
 	if err != nil {
@@ -224,21 +225,21 @@ func (bs *BlockService) SaveNewNodeToDisk(n *DiskNode) error {
 	return bs.writeBlockToDisk(block)
 }
 
-func (bs *BlockService) UpdateNodeToDisk(n *DiskNode) error {
+func (bs *blockService) UpdateNodeToDisk(n *DiskNode) error {
 	block := bs.convertDiskNodeToBlock(n)
 	return bs.writeBlockToDisk(block)
 }
 
-func (bs *BlockService) UpdateRootNode(n *DiskNode) error {
+func (bs *blockService) UpdateRootNode(n *DiskNode) error {
 	n.blockID = 0
 	return bs.UpdateNodeToDisk(n)
 }
 
-func NewBlockService(file *os.File) *BlockService {
-	return &BlockService{file}
+func NewBlockService(file *os.File) *blockService {
+	return &blockService{file}
 }
 
-func (bs *BlockService) rootBlockExists() bool {
+func (bs *blockService) rootBlockExists() bool {
 	latestBlockID, err := bs.getLatestBlockID()
 	// fmt.Println(latestBlockID)
 	//@Todo:Validate the type of error here
@@ -257,6 +258,6 @@ func (bs *BlockService) rootBlockExists() bool {
 1. Dynamicaly calculate blockSize
 2. Then based on the blocksize, calculate the maxLeafSize
 */
-func (bs *BlockService) getMaxLeafSize() int {
+func (bs *blockService) getMaxLeafSize() int {
 	return maxLeafSize
 }
