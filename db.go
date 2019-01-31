@@ -14,9 +14,12 @@ func Open(filePath string) (*DB, error) {
 	return &DB{storage}, nil
 }
 
-//Insert - Insert a key value pair in the database
-func (db *DB) Insert(key string, value string) error {
+//Put - Insert a key value pair in the database
+func (db *DB) Put(key string, value string) error {
 	pair := newPair(key, value)
+	if err := pair.validate(); err != nil {
+		return err
+	}
 	return db.storage.insert(pair)
 }
 
