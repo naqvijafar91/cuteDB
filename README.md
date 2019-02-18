@@ -31,4 +31,3 @@ The B-tree uses all of the ideas described above. In particular, a B-tree:
 * keeps the index balanced with a recursive algorithm
 * In addition, a B-tree minimizes waste by making sure the interior nodes are at least half full. A B-tree can handle an arbitrary number of insertions and deletions.
 
-![A Btree](https://www.google.com/url?sa=i&rct=j&q=&esrc=s&source=images&cd=&cad=rja&uact=8&ved=2ahUKEwi73Iza3sXgAhXKfysKHUvJACoQjRx6BAgBEAU&url=http%3A%2F%2Fwww.wikiwand.com%2Fen%2FB-tree&psig=AOvVaw2AhwAdlS4L82OruHPXpYLY&ust=1550595005454083)
