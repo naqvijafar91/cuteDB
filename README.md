@@ -1,6 +1,12 @@
 # cuteDB
 
-A slick BTree on disk based key value store implemented in pure Go. The purpose of this project is to understand how a production ready key value store works. 
+The purpose of this project is to understand how a production ready key value store works. 
+
+### Contributions
+
+All contributors are welcome, lets spread and grow the knowledge about databases by building them. Please ping me in case of any doubts and collaboration on naqvi.jafar91@gmail.com
+
+Please check out the issues and pick any one you like, raise a PR.
 
 Steps to Run
 
@@ -8,6 +14,7 @@ Steps to Run
 mkdir db
 go test
 ```
+It can be used as a library in any go project. 
 
 ## BTree
 In computer science, a B-tree is a self-balancing tree data structure that maintains sorted data and allows searches, sequential access, insertions, and deletions in logarithmic time. The B-tree is a generalization of a binary search tree in that a node can have more than two children.[1] Unlike self-balancing binary search trees, the B-tree is well suited for storage systems that read and write relatively large blocks of data, such as discs. It is commonly used in databases and file systems.
@@ -30,4 +37,8 @@ The B-tree uses all of the ideas described above. In particular, a B-tree:
 * uses partially full blocks to speed insertions and deletions
 * keeps the index balanced with a recursive algorithm
 * In addition, a B-tree minimizes waste by making sure the interior nodes are at least half full. A B-tree can handle an arbitrary number of insertions and deletions.
+
+### Limitations of cuteDB
+
+* Currently it can only be used via a single goroutine
 
