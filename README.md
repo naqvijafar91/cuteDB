@@ -4,9 +4,7 @@ The purpose of this project is to understand how a production ready key value st
 
 ### Contributions
 
-All contributors are welcome, lets spread and grow the knowledge about databases by building them. Please ping me in case of any doubts and collaboration on naqvi.jafar91@gmail.com
-
-Please check out the issues and pick any one you like, raise a PR.
+All contributors are welcome, lets spread and grow the knowledge about databases by building them.
 
 Steps to Run
 
