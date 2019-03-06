@@ -15,11 +15,11 @@ type diskBlock struct {
 	id                  uint64   // 4096 - 8 = 4088
 	currentLeafSize     uint64   // 4088 - 8 = 4080
 	currentChildrenSize uint64   // 4080 - 8 = 4072
-	childrenBlockIds    []uint64 // 352 - (8 * 30) =  112
-	dataSet             []*pairs // 4072 - (124 * 30) = 352
+	childrenBlockIds    []uint64 // 262 - (8 * 30) =  22
+	dataSet             []*pairs // 4072 - (127 * 30) = 262
 }
 
-// 112 bytes are still wasted
+// 22 bytes are still wasted
 
 func (b *diskBlock) setData(data []*pairs) {
 	b.dataSet = data
@@ -78,15 +78,17 @@ func (bs *blockService) getRootBlock() (*diskBlock, error) {
 }
 
 func (bs *blockService) getBlockFromDiskByBlockNumber(index int64) (*diskBlock, error) {
-
 	if index < 0 {
 		panic("Index less than 0 asked")
 	}
 	offset := index * blockSize
-	bs.file.Seek(offset, 0)
-	blockBuffer := make([]byte, blockSize)
+	_, err := bs.file.Seek(offset, 0)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := bs.file.Read(blockBuffer)
+	blockBuffer := make([]byte, blockSize)
+	_, err = bs.file.Read(blockBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +168,11 @@ func (bs *blockService) newBlock() (*diskBlock, error) {
 func (bs *blockService) writeBlockToDisk(block *diskBlock) error {
 	seekOffset := blockSize * block.id
 	blockBuffer := bs.getBufferFromBlock(block)
-	bs.file.Seek(int64(seekOffset), 0)
-	_, err := bs.file.Write(blockBuffer)
+	_, err := bs.file.Seek(int64(seekOffset), 0)
+	if err != nil {
+		return err
+	}
+	_, err = bs.file.Write(blockBuffer)
 	if err != nil {
 		return err
 	}
