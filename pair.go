@@ -36,7 +36,7 @@ func (p *pairs) validate() error {
 }
 
 func newPair(key string, value string) *pairs {
-	pair := &pairs{}
+	pair := new(pairs)
 	pair.setKey(key)
 	pair.setValue(value)
 	return pair
@@ -59,7 +59,7 @@ func convertPairsToBytes(pair *pairs) []byte {
 }
 
 func convertBytesToPair(pairByte []byte) *pairs {
-	pair := &pairs{}
+	pair := new(pairs)
 	var pairOffset uint16
 	pairOffset = 0
 	//Read key length

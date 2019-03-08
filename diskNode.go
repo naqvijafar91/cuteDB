@@ -100,10 +100,7 @@ func (n *DiskNode) addElement(element *pairs) int {
 }
 
 func (n *DiskNode) hasOverFlown() bool {
-	if len(n.getElements()) > n.blockService.getMaxLeafSize() {
-		return true
-	}
-	return false
+	return len(n.getElements()) > n.blockService.getMaxLeafSize()
 }
 
 func (n *DiskNode) getElements() []*pairs {

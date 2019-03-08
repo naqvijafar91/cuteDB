@@ -38,8 +38,7 @@ func uint64ToBytes(index uint64) []byte {
 }
 
 func uint64FromBytes(b []byte) uint64 {
-	i := uint64(binary.LittleEndian.Uint64(b))
-	return i
+	return uint64(binary.LittleEndian.Uint64(b))
 }
 
 type blockService struct {
@@ -180,8 +179,7 @@ func (bs *blockService) writeBlockToDisk(block *diskBlock) error {
 }
 
 func (bs *blockService) convertDiskNodeToBlock(node *DiskNode) *diskBlock {
-	block := &diskBlock{}
-	block.id = node.blockID
+	block := &diskBlock{id: node.blockID}
 	tempElements := make([]*pairs, len(node.getElements()))
 	for index, element := range node.getElements() {
 		tempElements[index] = element
@@ -204,10 +202,11 @@ func (bs *blockService) getNodeAtBlockID(blockID uint64) (*DiskNode, error) {
 }
 
 func (bs *blockService) convertBlockToDiskNode(block *diskBlock) *DiskNode {
-	node := &DiskNode{}
-	node.blockService = bs
-	node.blockID = block.id
-	node.keys = make([]*pairs, block.currentLeafSize)
+	node := &DiskNode{
+		blockID:      block.id,
+		blockService: bs,
+		keys:         make([]*pairs, block.currentLeafSize),
+	}
 	for index := range node.keys {
 		node.keys[index] = block.dataSet[index]
 	}
