@@ -3,16 +3,16 @@ package cutedb
 import "encoding/binary"
 import "fmt"
 
-// 2+2+30+90 = 124
+// 2+2+30+90 = 127
 const pairSize = 124
 const maxKeyLength = 30
-const maxValueLength = 90
+const maxValueLength = 93
 
 type pairs struct {
 	keyLen   uint16 // 2
 	valueLen uint16 // 2
 	key      string // 30
-	value    string // 90
+	value    string // 93
 }
 
 func (p *pairs) setKey(key string) {
@@ -27,16 +27,16 @@ func (p *pairs) setValue(value string) {
 
 func (p *pairs) validate() error {
 	if len(p.key) > maxKeyLength {
-		return fmt.Errorf("Key length should not be more than 30, currently it is %d ", len(p.key))
+		return fmt.Errorf("key length should not be more than 30, currently it is %d ", len(p.key))
 	}
 	if len(p.value) > maxValueLength {
-		return fmt.Errorf("Value length should not be more than 90, currently it is %d", len(p.value))
+		return fmt.Errorf("value length should not be more than 93, currently it is %d", len(p.value))
 	}
 	return nil
 }
 
 func newPair(key string, value string) *pairs {
-	pair := &pairs{}
+	pair := new(pairs)
 	pair.setKey(key)
 	pair.setValue(value)
 	return pair
@@ -59,7 +59,7 @@ func convertPairsToBytes(pair *pairs) []byte {
 }
 
 func convertBytesToPair(pairByte []byte) *pairs {
-	pair := &pairs{}
+	pair := new(pairs)
 	var pairOffset uint16
 	pairOffset = 0
 	//Read key length

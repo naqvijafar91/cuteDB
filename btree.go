@@ -11,7 +11,7 @@ type btree struct {
 type node interface {
 	insertPair(value *pairs, bt *btree) error
 	getValue(key string) (string, error)
-	printTree(level ...int)
+	printTree(level int)
 }
 
 func (bt *btree) isRootNode(n node) bool {

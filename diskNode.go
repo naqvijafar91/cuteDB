@@ -40,8 +40,6 @@ import "fmt"
 
 */
 
-const maxchildren = maxLeafSize + 1
-
 // DiskNode - In memory node implementation
 type DiskNode struct {
 	keys             []*pairs
@@ -51,22 +49,16 @@ type DiskNode struct {
 }
 
 func (n *DiskNode) isLeaf() bool {
-	if n.childrenBlockIDs == nil {
-		return true
-	} else if len(n.childrenBlockIDs) == 0 {
-		return true
-	}
-	return false
+	return len(n.childrenBlockIDs) == 0
 }
 
 // PrintTree - Traverse and print the entire tree
-func (n *DiskNode) printTree(level ...int) {
-	var currentLevel int
-	if len(level) == 0 {
+func (n *DiskNode) printTree(level int) {
+	currentLevel := level
+	if level == 0 {
 		currentLevel = 1
-	} else {
-		currentLevel = level[0]
 	}
+
 	n.printNode()
 	for i := 0; i < len(n.childrenBlockIDs); i++ {
 		fmt.Println("Printing ", i+1, " th child of level : ", currentLevel)
@@ -108,10 +100,7 @@ func (n *DiskNode) addElement(element *pairs) int {
 }
 
 func (n *DiskNode) hasOverFlown() bool {
-	if len(n.getElements()) > n.blockService.getMaxLeafSize() {
-		return true
-	}
-	return false
+	return len(n.getElements()) > n.blockService.getMaxLeafSize()
 }
 
 func (n *DiskNode) getElements() []*pairs {
@@ -192,7 +181,7 @@ func (n *DiskNode) splitLeafNode() (*pairs, *DiskNode, *DiskNode, error) {
 
 	// Now lets split elements array into 2 as we are splitting this node
 	elements1 := elements[0:midIndex]
-	elements2 := elements[midIndex+1 : len(elements)]
+	elements2 := elements[midIndex+1:]
 
 	// Now lets construct new Nodes from these 2 element arrays
 	leftNode, err := newLeafNode(elements1, n.blockService)
@@ -226,13 +215,13 @@ func (n *DiskNode) splitNonLeafNode() (*pairs, *DiskNode, *DiskNode, error) {
 
 	// Now lets split elements array into 2 as we are splitting this node
 	elements1 := elements[0:midIndex]
-	elements2 := elements[midIndex+1 : len(elements)]
+	elements2 := elements[midIndex+1:]
 
 	// Lets split the children
 	children := n.childrenBlockIDs
 
 	children1 := children[0 : midIndex+1]
-	children2 := children[midIndex+1 : len(children)]
+	children2 := children[midIndex+1:]
 
 	// Now lets construct new Nodes from these 2 element arrays
 	leftNode, err := newNodeWithChildren(elements1, children1, n.blockService)
@@ -322,7 +311,6 @@ func (n *DiskNode) getChildNodeForElement(key string) (*DiskNode, error) {
 }
 
 func (n *DiskNode) insert(value *pairs, bt *btree) (*pairs, *DiskNode, *DiskNode, error) {
-
 	if n.isLeaf() {
 		n.addElement(value)
 		if !n.hasOverFlown() {
@@ -443,8 +431,8 @@ func (n *DiskNode) search(key string) (string, error) {
 
 // Insert - Insert value into Node
 func (n *DiskNode) insertPair(value *pairs, bt *btree) error {
-	_,_,_,err:=n.insert(value, bt)
-	if err!=nil {
+	_, _, _, err := n.insert(value, bt)
+	if err != nil {
 		return err
 	}
 	return nil

@@ -25,5 +25,5 @@ func (db *DB) Put(key string, value string) error {
 
 //Get - Get the stored value from the database for the respective key
 func (db *DB) Get(key string) (string, bool, error) {
-	return db.Get(key)
+	return db.storage.get(key)
 }

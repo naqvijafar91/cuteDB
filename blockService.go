@@ -15,11 +15,11 @@ type diskBlock struct {
 	id                  uint64   // 4096 - 8 = 4088
 	currentLeafSize     uint64   // 4088 - 8 = 4080
 	currentChildrenSize uint64   // 4080 - 8 = 4072
-	childrenBlockIds    []uint64 // 352 - (8 * 30) =  112
-	dataSet             []*pairs // 4072 - (124 * 30) = 352
+	childrenBlockIds    []uint64 // 262 - (8 * 30) =  22
+	dataSet             []*pairs // 4072 - (127 * 30) = 262
 }
 
-// 112 bytes are still wasted
+// 22 bytes are still wasted
 
 func (b *diskBlock) setData(data []*pairs) {
 	b.dataSet = data
@@ -38,8 +38,7 @@ func uint64ToBytes(index uint64) []byte {
 }
 
 func uint64FromBytes(b []byte) uint64 {
-	i := uint64(binary.LittleEndian.Uint64(b))
-	return i
+	return uint64(binary.LittleEndian.Uint64(b))
 }
 
 type blockService struct {
@@ -78,15 +77,17 @@ func (bs *blockService) getRootBlock() (*diskBlock, error) {
 }
 
 func (bs *blockService) getBlockFromDiskByBlockNumber(index int64) (*diskBlock, error) {
-
 	if index < 0 {
 		panic("Index less than 0 asked")
 	}
 	offset := index * blockSize
-	bs.file.Seek(offset, 0)
-	blockBuffer := make([]byte, blockSize)
+	_, err := bs.file.Seek(offset, 0)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := bs.file.Read(blockBuffer)
+	blockBuffer := make([]byte, blockSize)
+	_, err = bs.file.Read(blockBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +167,11 @@ func (bs *blockService) newBlock() (*diskBlock, error) {
 func (bs *blockService) writeBlockToDisk(block *diskBlock) error {
 	seekOffset := blockSize * block.id
 	blockBuffer := bs.getBufferFromBlock(block)
-	bs.file.Seek(int64(seekOffset), 0)
-	_, err := bs.file.Write(blockBuffer)
+	_, err := bs.file.Seek(int64(seekOffset), 0)
+	if err != nil {
+		return err
+	}
+	_, err = bs.file.Write(blockBuffer)
 	if err != nil {
 		return err
 	}
@@ -175,8 +179,7 @@ func (bs *blockService) writeBlockToDisk(block *diskBlock) error {
 }
 
 func (bs *blockService) convertDiskNodeToBlock(node *DiskNode) *diskBlock {
-	block := &diskBlock{}
-	block.id = node.blockID
+	block := &diskBlock{id: node.blockID}
 	tempElements := make([]*pairs, len(node.getElements()))
 	for index, element := range node.getElements() {
 		tempElements[index] = element
@@ -199,10 +202,11 @@ func (bs *blockService) getNodeAtBlockID(blockID uint64) (*DiskNode, error) {
 }
 
 func (bs *blockService) convertBlockToDiskNode(block *diskBlock) *DiskNode {
-	node := &DiskNode{}
-	node.blockService = bs
-	node.blockID = block.id
-	node.keys = make([]*pairs, block.currentLeafSize)
+	node := &DiskNode{
+		blockID:      block.id,
+		blockService: bs,
+		keys:         make([]*pairs, block.currentLeafSize),
+	}
 	for index := range node.keys {
 		node.keys[index] = block.dataSet[index]
 	}
