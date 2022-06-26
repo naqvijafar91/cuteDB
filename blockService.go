@@ -43,6 +43,7 @@ func uint64FromBytes(b []byte) uint64 {
 
 type blockService struct {
 	file *os.File
+	mu *sync.Mutex
 }
 
 func (bs *blockService) getLatestBlockID() (int64, error) {
@@ -165,6 +166,8 @@ func (bs *blockService) newBlock() (*diskBlock, error) {
 }
 
 func (bs *blockService) writeBlockToDisk(block *diskBlock) error {
+	bs.mu.Lock()
+	defer bs.mu.Unlock()
 	seekOffset := blockSize * block.id
 	blockBuffer := bs.getBufferFromBlock(block)
 	_, err := bs.file.Seek(int64(seekOffset), 0)
@@ -240,7 +243,7 @@ func (bs *blockService) updateRootNode(n *DiskNode) error {
 }
 
 func newBlockService(file *os.File) *blockService {
-	return &blockService{file}
+	return &blockService{file: file, mu: &sync.Mutex{}}
 }
 
 func (bs *blockService) rootBlockExists() bool {
